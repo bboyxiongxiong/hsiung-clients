@@ -300,7 +300,7 @@ function onReferrerInput(keyword) {
 
   let html = '';
   matches.forEach(m => {
-    html += `<button type="button" class="dropdown-item small py-1" onclick="selectReferrer('${m.name}')">${m.name} (${m.phone || '無電話'})</button>`;
+    html += `<button type="button" class="dropdown-item small py-1" onclick="selectReferrer('${m.name}')">${m.name} </button>`;
   });
   dropdown.innerHTML = html;
   dropdown.style.display = 'block';
