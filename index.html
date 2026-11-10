@@ -10,6 +10,7 @@
 <body>
 
 <div class="container py-4" style="max-width: 600px;">
+  <!-- 頂部標題與按鈕 -->
   <div class="d-flex justify-content-between align-items-center mb-3">
     <div>
       <h3 class="fw-bold mb-0 text-dark">客戶紀錄</h3>
@@ -23,6 +24,7 @@
     </div>
   </div>
 
+  <!-- 搜尋欄與篩選下拉選單 -->
   <div class="row g-2 mb-3">
     <div class="col-7">
       <div class="input-group shadow-sm">
@@ -78,6 +80,15 @@
     </div>
   </div>
 
+  <!-- 【新增】本日壽星顯示區塊 -->
+  <div id="today-birthday-banner" class="alert alert-warning border-warning shadow-sm rounded-4 mb-3 p-3 text-dark" style="display: none;">
+    <div class="d-flex align-items-center">
+      <i class="bi bi-cake2-fill text-warning fs-4 me-2"></i>
+      <div id="today-birthday-content"></div>
+    </div>
+  </div>
+
+  <!-- 客戶名單列表 -->
   <div id="client-list"></div>
 </div>
 
@@ -300,7 +311,7 @@ function onReferrerInput(keyword) {
 
   let html = '';
   matches.forEach(m => {
-    html += `<button type="button" class="dropdown-item small py-1" onclick="selectReferrer('${m.name}')">${m.name} </button>`;
+    html += `<button type="button" class="dropdown-item small py-1" onclick="selectReferrer('${m.name}')">${m.name}</button>`;
   });
   dropdown.innerHTML = html;
   dropdown.style.display = 'block';
@@ -325,12 +336,43 @@ function loadData() {
     .then(data => {
       allClients = data.clients || [];
       allInterviews = data.interviews || [];
+      checkTodayBirthdays();
       filterClients();
     })
     .catch(err => {
       console.error(err);
       document.getElementById('client-list').innerHTML = '<div class="text-center text-danger py-4">載入失敗，請檢查 API 網址</div>';
     });
+}
+
+// 【新增】檢查本日壽星邏輯
+function checkTodayBirthdays() {
+  const today = new Date();
+  const currentMonth = String(today.getMonth() + 1).padStart(2, '0');
+  const currentDate = String(today.getDate()).padStart(2, '0');
+
+  const todayBirthdays = allClients.filter(c => {
+    if (!c.birthday) return false;
+    const parts = c.birthday.split('-');
+    if (parts.length === 3) {
+      return parts[1] === currentMonth && parts[2] === currentDate;
+    }
+    return false;
+  });
+
+  const banner = document.getElementById('today-birthday-banner');
+  const content = document.getElementById('today-birthday-content');
+
+  if (todayBirthdays.length > 0) {
+    let namesHtml = todayBirthdays.map(c => 
+      `<button class="btn btn-sm btn-dark py-0 px-2 me-1 fw-bold" onclick="jumpToClientByName('${c.name}')"><i class="bi bi-gift-fill me-1"></i>${c.name}</button>`
+    ).join('');
+
+    content.innerHTML = `<div><strong>本日壽星 (${today.getMonth() + 1}月${today.getDate()}日)：</strong> ${namesHtml} 記得送上祝賀！</div>`;
+    banner.style.display = 'block';
+  } else {
+    banner.style.display = 'none';
+  }
 }
 
 function calculateBirthdayInfo(birthdayStr) {
@@ -825,6 +867,7 @@ function loadDataForModal(clientId) {
     .then(data => {
       allClients = data.clients || [];
       allInterviews = data.interviews || [];
+      checkTodayBirthdays();
       filterClients();
       renderInterviewList(clientId);
     });
