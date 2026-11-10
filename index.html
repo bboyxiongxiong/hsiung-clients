@@ -438,7 +438,8 @@ function calculateBirthdayInfo(birthdayStr) {
 }
 
 function filterClients() {
-  const keyword = document.getElementById('search-input').value.toLowerCase();
+  const keywordInput = document.getElementById('search-input');
+  const keyword = keywordInput ? keywordInput.value.toLowerCase().trim() : '';
   const selectedFilter = document.getElementById('month-select').value;
 
   let sortMode = 'default';
@@ -447,18 +448,24 @@ function filterClients() {
 
   const filtered = allClients.filter(c => {
     const phoneFormatted = formatPhone(c.phone);
-    const matchKeyword = (c.name && c.name.toLowerCase().includes(keyword)) ||
-                         (c.phone && String(c.phone).toLowerCase().includes(keyword)) ||
-                         (phoneFormatted.includes(keyword)) ||
-                         (c.address && c.address.toLowerCase().includes(keyword)) ||
-                         (c.idNumber && c.idNumber.toLowerCase().includes(keyword)) ||
-                         (c.occupation && c.occupation.toLowerCase().includes(keyword)) ||
-                         (c.tags && c.tags.some(t => t.toLowerCase().includes(keyword))) ||
-                         (c.vehicles && c.vehicles.some(v => v.plate && v.plate.toLowerCase().includes(keyword))) ||
-                         (c.note && c.note.toLowerCase().includes(keyword)) ||
-                         (c.source && c.source.type && c.source.type.toLowerCase().includes(keyword)) ||
-                         (c.source && c.source.referrerName && c.source.referrerName.toLowerCase().includes(keyword)) ||
-                         (c.source && c.source.text && c.source.text.toLowerCase().includes(keyword));
+    
+    // 關鍵字比對邏輯（只有當輸入 keyword 時才進行比對）
+    let matchKeyword = true;
+    if (keyword !== '') {
+      const nameMatch = c.name && c.name.toLowerCase().includes(keyword);
+      const phoneMatch = (c.phone && String(c.phone).toLowerCase().includes(keyword)) || phoneFormatted.includes(keyword);
+      const addressMatch = c.address && c.address.toLowerCase().includes(keyword);
+      const idMatch = c.idNumber && c.idNumber.toLowerCase().includes(keyword);
+      const occMatch = c.occupation && c.occupation.toLowerCase().includes(keyword);
+      const tagMatch = c.tags && c.tags.some(t => t.toLowerCase().includes(keyword));
+      const vehicleMatch = c.vehicles && c.vehicles.some(v => v.plate && v.plate.toLowerCase().includes(keyword));
+      const noteMatch = c.note && c.note.toLowerCase().includes(keyword);
+      const sourceTypeMatch = c.source && c.source.type && c.source.type.toLowerCase().includes(keyword);
+      const sourceRefMatch = c.source && c.source.referrerName && c.source.referrerName.toLowerCase().includes(keyword);
+      const sourceTextMatch = c.source && c.source.text && c.source.text.toLowerCase().includes(keyword);
+
+      matchKeyword = nameMatch || phoneMatch || addressMatch || idMatch || occMatch || tagMatch || vehicleMatch || noteMatch || sourceTypeMatch || sourceRefMatch || sourceTextMatch;
+    }
     
     let matchFilter = true;
     if (selectedFilter) {
