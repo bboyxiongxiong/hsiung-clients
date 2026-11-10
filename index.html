@@ -80,7 +80,7 @@
     </div>
   </div>
 
-  <!-- 【新增】本日壽星顯示區塊 -->
+  <!-- 本日壽星顯示區塊 -->
   <div id="today-birthday-banner" class="alert alert-warning border-warning shadow-sm rounded-4 mb-3 p-3 text-dark" style="display: none;">
     <div class="d-flex align-items-center">
       <i class="bi bi-cake2-fill text-warning fs-4 me-2"></i>
@@ -276,6 +276,16 @@ document.addEventListener("DOMContentLoaded", () => {
   loadData();
 });
 
+// 【新增】自動補回被試算表吃掉的電話開頭 0
+function formatPhone(phone) {
+  if (!phone) return '未填寫';
+  let p = String(phone).trim();
+  if (p.length === 9 && p.startsWith('9')) {
+    p = '0' + p;
+  }
+  return p;
+}
+
 function onSourceTypeChange() {
   const type = document.getElementById('client-source-type').value;
   const referrerCol = document.getElementById('source-referrer-col');
@@ -345,7 +355,6 @@ function loadData() {
     });
 }
 
-// 【新增】檢查本日壽星邏輯
 function checkTodayBirthdays() {
   const today = new Date();
   const currentMonth = String(today.getMonth() + 1).padStart(2, '0');
@@ -437,8 +446,10 @@ function filterClients() {
   if (selectedFilter === 'sort-ins-asc') sortMode = 'ins-asc';
 
   const filtered = allClients.filter(c => {
+    const phoneFormatted = formatPhone(c.phone);
     const matchKeyword = (c.name && c.name.toLowerCase().includes(keyword)) ||
                          (c.phone && c.phone.toLowerCase().includes(keyword)) ||
+                         (phoneFormatted.includes(keyword)) ||
                          (c.address && c.address.toLowerCase().includes(keyword)) ||
                          (c.idNumber && c.idNumber.toLowerCase().includes(keyword)) ||
                          (c.occupation && c.occupation.toLowerCase().includes(keyword)) ||
@@ -540,6 +551,7 @@ function renderClients(clients, sortMode = 'default') {
   clients.forEach(c => {
     const info = calculateBirthdayInfo(c.birthday);
     const clientInterviews = allInterviews.filter(i => i.clientId == c.id);
+    const phoneStr = formatPhone(c.phone);
     
     let genderBadge = '';
     if (c.gender === '男') {
@@ -628,7 +640,7 @@ function renderClients(clients, sortMode = 'default') {
           </div>
           <div class="small text-secondary mb-1">
             ${occupationHtml}
-            <i class="bi bi-telephone-fill me-1"></i> 電話：<a href="tel:${c.phone}" class="text-decoration-none">${c.phone || '未填寫'}</a>
+            <i class="bi bi-telephone-fill me-1"></i> 電話：<a href="tel:${phoneStr}" class="text-decoration-none">${phoneStr}</a>
           </div>
           <div class="small text-secondary mb-1">
             <i class="bi bi-geo-alt-fill me-1"></i> 地址：${c.address || '未填寫'}
@@ -940,7 +952,7 @@ function openModalForEdit(id) {
 
   document.getElementById('client-idNumber').value = client.idNumber || '';
   document.getElementById('client-occupation').value = client.occupation || '';
-  document.getElementById('client-phone').value = client.phone || '';
+  document.getElementById('client-phone').value = formatPhone(client.phone); // 確保編輯時也能正常帶入帶 0 的完整電話
   document.getElementById('client-address').value = client.address || '';
   
   document.querySelectorAll('.client-tag-checkbox').forEach(cb => {
