@@ -449,7 +449,6 @@ function filterClients() {
   const filtered = allClients.filter(c => {
     const phoneFormatted = formatPhone(c.phone);
     
-    // 關鍵字比對邏輯（只有當輸入 keyword 時才進行比對）
     let matchKeyword = true;
     if (keyword !== '') {
       const nameMatch = c.name && c.name.toLowerCase().includes(keyword);
@@ -464,7 +463,7 @@ function filterClients() {
       const sourceRefMatch = c.source && c.source.referrerName && c.source.referrerName.toLowerCase().includes(keyword);
       const sourceTextMatch = c.source && c.source.text && c.source.text.toLowerCase().includes(keyword);
 
-      matchKeyword = nameMatch || phoneMatch || addressMatch || idMatch || occMatch || tagMatch || vehicleMatch || noteMatch || sourceTypeMatch || sourceRefMatch || sourceTextMatch;
+      matchKeyword = nameMatch || phoneMatch || addressMatch || idMatch || occMatch || tagMatch || vehicleMatch || noteMatch || sourceTypeMatch || sourceRefRefMatch || sourceTextMatch;
     }
     
     let matchFilter = true;
@@ -571,7 +570,12 @@ function renderClients(clients, sortMode = 'default') {
     if (c.vehicles && c.vehicles.length > 0) {
       vehiclesHtml = `<div class="mt-2 pt-2 border-top small text-secondary">`;
       c.vehicles.forEach(v => {
-        let typeIcon = v.type === '汽車' ? 'bi-car-front' : 'bi-scooter';
+        let typeIcon = 'bi-scooter';
+        if (v.type === '汽車') {
+          typeIcon = 'bi-car-front';
+        } else if (v.type === '重機') {
+          typeIcon = 'bi-speedometer2';
+        }
         vehiclesHtml += `
           <div class="d-flex align-items-center gap-2 mb-1">
             <span class="badge bg-warning text-dark border border-warning bg-opacity-25">
@@ -738,6 +742,7 @@ function addVehicleRow(type = '機車', plate = '', expiry = '') {
     <div class="col-3">
       <select class="form-select form-select-sm vehicle-type">
         <option value="機車" ${type === '機車' ? 'selected' : ''}>機車</option>
+        <option value="重機" ${type === '重機' ? 'selected' : ''}>重機</option>
         <option value="汽車" ${type === '汽車' ? 'selected' : ''}>汽車</option>
       </select>
     </div>
