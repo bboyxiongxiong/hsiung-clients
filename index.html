@@ -40,6 +40,10 @@
           <option value="source-轉介紹">轉介紹</option>
           <option value="source-陌生">陌生</option>
         </optgroup>
+        <optgroup label="性別">
+          <option value="gender-男">男</option>
+          <option value="gender-女">女</option>
+        </optgroup>
         <optgroup label="排序方式">
           <option value="sort-age-desc">年紀</option>
           <option value="sort-ins-asc">距離保險年齡+1</option>
@@ -451,19 +455,19 @@ function filterClients() {
     
     let matchKeyword = true;
     if (keyword !== '') {
-      const nameMatch = c.name && c.name.toLowerCase().includes(keyword);
+      const nameMatch = c.name && String(c.name).toLowerCase().includes(keyword);
       const phoneMatch = (c.phone && String(c.phone).toLowerCase().includes(keyword)) || phoneFormatted.includes(keyword);
-      const addressMatch = c.address && c.address.toLowerCase().includes(keyword);
-      const idMatch = c.idNumber && c.idNumber.toLowerCase().includes(keyword);
-      const occMatch = c.occupation && c.occupation.toLowerCase().includes(keyword);
-      const tagMatch = c.tags && c.tags.some(t => t.toLowerCase().includes(keyword));
-      const vehicleMatch = c.vehicles && c.vehicles.some(v => v.plate && v.plate.toLowerCase().includes(keyword));
-      const noteMatch = c.note && c.note.toLowerCase().includes(keyword);
-      const sourceTypeMatch = c.source && c.source.type && c.source.type.toLowerCase().includes(keyword);
-      const sourceRefMatch = c.source && c.source.referrerName && c.source.referrerName.toLowerCase().includes(keyword);
-      const sourceTextMatch = c.source && c.source.text && c.source.text.toLowerCase().includes(keyword);
+      const addressMatch = c.address && String(c.address).toLowerCase().includes(keyword);
+      const idMatch = c.idNumber && String(c.idNumber).toLowerCase().includes(keyword);
+      const occMatch = c.occupation && String(c.occupation).toLowerCase().includes(keyword);
+      const tagMatch = Array.isArray(c.tags) && c.tags.some(t => String(t).toLowerCase().includes(keyword));
+      const vehicleMatch = Array.isArray(c.vehicles) && c.vehicles.some(v => v.plate && String(v.plate).toLowerCase().includes(keyword));
+      const noteMatch = c.note && String(c.note).toLowerCase().includes(keyword);
+      const sourceTypeMatch = c.source && c.source.type && String(c.source.type).toLowerCase().includes(keyword);
+      const sourceRefMatch = c.source && c.source.referrerName && String(c.source.referrerName).toLowerCase().includes(keyword);
+      const sourceTextMatch = c.source && c.source.text && String(c.source.text).toLowerCase().includes(keyword);
 
-      matchKeyword = nameMatch || phoneMatch || addressMatch || idMatch || occMatch || tagMatch || vehicleMatch || noteMatch || sourceTypeMatch || sourceRefMatch || sourceTextMatch;
+      matchKeyword = Boolean(nameMatch || phoneMatch || addressMatch || idMatch || occMatch || tagMatch || vehicleMatch || noteMatch || sourceTypeMatch || sourceRefMatch || sourceTextMatch);
     }
     
     let matchFilter = true;
@@ -472,18 +476,21 @@ function filterClients() {
         matchFilter = true;
       } else if (selectedFilter.startsWith('source-')) {
         const targetSource = selectedFilter.split('-')[1];
-        matchFilter = c.source && c.source.type === targetSource;
+        matchFilter = Boolean(c.source && c.source.type === targetSource);
+      } else if (selectedFilter.startsWith('gender-')) {
+        const targetGender = selectedFilter.split('-')[1];
+        matchFilter = Boolean(c.gender === targetGender);
       } else if (selectedFilter === 'type-life') {
-        matchFilter = c.tags && c.tags.includes('人壽');
+        matchFilter = Boolean(Array.isArray(c.tags) && c.tags.includes('人壽'));
       } else if (selectedFilter === 'type-property') {
-        matchFilter = c.tags && (c.tags.includes('車險') || c.tags.includes('旅平卡') || c.tags.includes('產險'));
+        matchFilter = Boolean(Array.isArray(c.tags) && (c.tags.includes('車險') || c.tags.includes('旅平卡') || c.tags.includes('產險')));
       } else if (selectedFilter.startsWith('ins-')) {
         const targetMonth = selectedFilter.split('-')[1];
         matchFilter = false;
-        if (c.vehicles && c.vehicles.length > 0) {
+        if (Array.isArray(c.vehicles) && c.vehicles.length > 0) {
           matchFilter = c.vehicles.some(v => {
             if (!v.expiry) return false;
-            const parts = v.expiry.split('-');
+            const parts = String(v.expiry).split('-');
             if (parts.length === 3) {
               return parts[1] === targetMonth;
             }
@@ -492,7 +499,7 @@ function filterClients() {
         }
       } else {
         if (c.birthday) {
-          const parts = c.birthday.split('-');
+          const parts = String(c.birthday).split('-');
           if (parts.length === 3) {
             matchFilter = (parts[1] === selectedFilter);
           } else {
