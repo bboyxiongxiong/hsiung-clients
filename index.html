@@ -1,508 +1,1091 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>客戶紀錄 - 名單管理系統</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>客戶紀錄 - 名單管理系統</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
 </head>
 <body>
-<div class="container py-4" style="max-width:600px">
-<div class="d-flex justify-content-between align-items-center mb-3">
-<div>
-<h3 class="fw-bold mb-0 text-dark">客戶紀錄</h3>
-<small class="text-muted">名單管理系統 · V1.1.1</small>
-</div>
-<div class="d-flex align-items-center gap-2">
-<span class="badge bg-primary px-3 py-2 fs-6" id="client-count">0 名單</span>
-<button class="btn btn-primary rounded-circle shadow-sm d-flex align-items-center justify-content-center" style="width:40px;height:40px" onclick="openModalForAdd()">
-<i class="bi bi-plus-lg fs-5">
-</i>
-</button>
-</div>
-</div>
-<div class="row g-2 mb-3">
-<div class="col-7">
-<div class="input-group shadow-sm">
-<span class="input-group-text bg-white border-end-0">
-<i class="bi bi-search text-muted">
-</i>
-</span>
-<input type="text" class="form-control border-start-0 ps-0" id="search-input" placeholder="搜尋姓名、電話、地址、身分證..." oninput="filterClients()">
-</div>
-</div>
-<div class="col-5">
-<select class="form-select shadow-sm" id="month-select" onchange="filterClients()">
-<option value="">所有名單</option>
-<optgroup label="來源">
-<option value="source-緣故">緣故</option>
-<option value="source-轉介紹">轉介紹</option>
-<option value="source-陌生">陌生</option>
-</optgroup>
-<optgroup label="性別">
-<option value="gender-男">男</option>
-<option value="gender-女">女</option>
-</optgroup>
-<optgroup label="排序方式">
-<option value="sort-age-desc">年紀</option>
-<option value="sort-ins-asc">距離保險年齡+1</option>
-</optgroup>
-<optgroup label="每月壽星" id="birthday-options">
-<option value="01">1月壽星</option>
-<option value="02">2月壽星</option>
-<option value="03">3月壽星</option>
-<option value="04">4月壽星</option>
-<option value="05">5月壽星</option>
-<option value="06">6月壽星</option>
-<option value="07">7月壽星</option>
-<option value="08">8月壽星</option>
-<option value="09">9月壽星</option>
-<option value="10">10月壽星</option>
-<option value="11">11月壽星</option>
-<option value="12">12月壽星</option>
-</optgroup>
-<optgroup label="既有客戶類別">
-<option value="type-life">人壽</option>
-<option value="type-property">產險</option>
-</optgroup>
-<optgroup label="強制險到期月份" id="insurance-options">
-<option value="ins-01">1月</option>
-<option value="ins-02">2月</option>
-<option value="ins-03">3月</option>
-<option value="ins-04">4月</option>
-<option value="ins-05">5月</option>
-<option value="ins-06">6月</option>
-<option value="ins-07">7月</option>
-<option value="ins-08">8月</option>
-<option value="ins-09">9月</option>
-<option value="ins-10">10月</option>
-<option value="ins-11">11月</option>
-<option value="ins-12">12月</option>
-</optgroup>
-</select>
-</div>
-</div>
-<div id="today-birthday-banner" class="alert alert-warning border-warning shadow-sm rounded-4 mb-3 p-3 text-dark" style="display:none">
-<div class="d-flex align-items-center">
-<i class="bi bi-cake2-fill text-warning fs-4 me-2">
-</i>
-<div id="today-birthday-content">
-</div>
-</div>
+
+<div class="container py-4" style="max-width: 600px;">
+  <!-- 頂部標題與按鈕 -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+      <h3 class="fw-bold mb-0 text-dark">客戶紀錄</h3>
+      <small class="text-muted">名單管理系統</small>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge bg-primary px-3 py-2 fs-6" id="client-count">0 名單</span>
+      <button class="btn btn-primary rounded-circle shadow-sm d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" onclick="openModalForAdd()">
+        <i class="bi bi-plus-lg fs-5"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- 搜尋欄與篩選下拉選單 -->
+  <div class="row g-2 mb-3">
+    <div class="col-7">
+      <div class="input-group shadow-sm">
+        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+        <input type="text" class="form-control border-start-0 ps-0" id="search-input" placeholder="搜尋姓名、電話、地址、身分證..." oninput="filterClients()">
+      </div>
+    </div>
+    <div class="col-5">
+      <select class="form-select shadow-sm" id="month-select" onchange="filterClients()">
+        <option value="">所有名單</option>
+        <optgroup label="來源">
+          <option value="source-緣故">緣故</option>
+          <option value="source-轉介紹">轉介紹</option>
+          <option value="source-陌生">陌生</option>
+        </optgroup>
+        <optgroup label="性別">
+          <option value="gender-男">男</option>
+          <option value="gender-女">女</option>
+        </optgroup>
+        <optgroup label="排序方式">
+          <option value="sort-age-desc">年紀</option>
+          <option value="sort-ins-asc">距離保險年齡+1</option>
+        </optgroup>
+        <optgroup label="每月壽星">
+          <option value="01">1月壽星</option>
+          <option value="02">2月壽星</option>
+          <option value="03">3月壽星</option>
+          <option value="04">4月壽星</option>
+          <option value="05">5月壽星</option>
+          <option value="06">6月壽星</option>
+          <option value="07">7月壽星</option>
+          <option value="08">8月壽星</option>
+          <option value="09">9月壽星</option>
+          <option value="10">10月壽星</option>
+          <option value="11">11月壽星</option>
+          <option value="12">12月壽星</option>
+        </optgroup>
+        <optgroup label="既有客戶類別">
+          <option value="type-life">人壽</option>
+          <option value="type-property">產險</option>
+        </optgroup>
+        <optgroup label="強制險到期月份">
+          <option value="ins-01">1月</option>
+          <option value="ins-02">2月</option>
+          <option value="ins-03">3月</option>
+          <option value="ins-04">4月</option>
+          <option value="ins-05">5月</option>
+          <option value="ins-06">6月</option>
+          <option value="ins-07">7月</option>
+          <option value="ins-08">8月</option>
+          <option value="ins-09">9月</option>
+          <option value="ins-10">10月</option>
+          <option value="ins-11">11月</option>
+          <option value="ins-12">12月</option>
+        </optgroup>
+      </select>
+    </div>
+  </div>
+
+  <!-- 本日壽星顯示區塊 -->
+  <div id="today-birthday-banner" class="alert alert-warning border-warning shadow-sm rounded-4 mb-3 p-3 text-dark" style="display: none;">
+    <div class="d-flex align-items-center">
+      <i class="bi bi-cake2-fill text-warning fs-4 me-2"></i>
+      <div id="today-birthday-content"></div>
+    </div>
+  </div>
+
+  <!-- 客戶名單列表 -->
+  <div id="client-list"></div>
 </div>
 
-<div id="client-list">
-<div class="text-center text-muted py-4">等待 JavaScript 啟動…</div>
-</div>
-</div>
+<!-- 新增/編輯客戶 Modal -->
 <div class="modal fade" id="client-modal" tabindex="-1">
-<div class="modal-dialog modal-dialog-scrollable">
-<div class="modal-content rounded-4 border-0 shadow">
-<div class="modal-header bg-light">
-<h5 class="modal-title fw-bold" id="modal-title">新增名單</h5>
-<button type="button" class="btn-close" data-bs-dismiss="modal">
-</button>
+  <div class="modal-dialog modal-dialog-scrollable">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title fw-bold" id="modal-title">新增名單</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <input type="hidden" id="client-id">
+        <div class="mb-3">
+          <label class="form-label small fw-bold">姓名 *</label>
+          <input type="text" class="form-control" id="client-name" placeholder="">
+        </div>
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <label class="form-label small fw-bold">性別</label>
+            <select class="form-select" id="client-gender">
+              <option value="">請選擇</option>
+              <option value="男">男</option>
+              <option value="女">女</option>
+            </select>
+          </div>
+          <div class="col-6">
+            <label class="form-label small fw-bold">生日 *</label>
+            <input type="date" class="form-control" id="client-birthday">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-bold">來源</label>
+          <div class="row g-2 align-items-center">
+            <div class="col-4" id="source-type-col">
+              <select class="form-select form-select-sm" id="client-source-type" onchange="onSourceTypeChange()">
+                <option value="緣故">緣故</option>
+                <option value="轉介紹">轉介紹</option>
+                <option value="陌生">陌生</option>
+              </select>
+            </div>
+            <div class="col-4" id="source-referrer-col" style="display: none; position: relative;">
+              <input type="text" class="form-control form-control-sm" id="client-source-referrer" placeholder="轉介紹中心" oninput="onReferrerInput(this.value)" autocomplete="off">
+              <div id="referrer-dropdown" class="dropdown-menu shadow w-100 p-0" style="max-height: 150px; overflow-y: auto; display: none; position: absolute; z-index: 1050;"></div>
+            </div>
+            <div class="col-8" id="source-text-col">
+              <input type="text" class="form-control form-control-sm" id="client-source-text" placeholder="">
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-bold">身分證字號</label>
+          <input type="text" class="form-control" id="client-idNumber" placeholder="">
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-bold">職業</label>
+          <input type="text" class="form-control" id="client-occupation" placeholder="">
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-bold">電話</label>
+          <input type="tel" class="form-control" id="client-phone" placeholder="">
+        </div>
+        <div class="mb-3">
+          <label class="form-label small fw-bold">地址</label>
+          <input type="text" class="form-control" id="client-address" placeholder="">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-bold">既有客戶</label>
+          <div class="d-flex flex-wrap gap-2">
+            <div class="form-check">
+              <input class="form-check-input client-tag-checkbox" type="checkbox" value="人壽" id="tag-life">
+              <label class="form-check-label" for="tag-life">人壽</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input client-tag-checkbox" type="checkbox" value="車險" id="tag-car">
+              <label class="form-check-label" for="tag-car">車險</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input client-tag-checkbox" type="checkbox" value="旅平卡" id="tag-travel">
+              <label class="form-check-label" for="tag-travel">旅平卡</label>
+            </div>
+            <div class="form-check">
+              <input class="form-check-input client-tag-checkbox" type="checkbox" value="產險" id="tag-property">
+              <label class="form-check-label" for="tag-property">產險</label>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <label class="form-label small fw-bold mb-0">車輛資訊</label>
+            <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2" onclick="addVehicleRow()"><i class="bi bi-plus"></i> 新增車輛</button>
+          </div>
+          <div id="vehicle-rows-container"></div>
+        </div>
+      </div>
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-primary btn-sm px-4 fw-bold" id="save-client-btn" onclick="saveClient()">新增</button>
+      </div>
+    </div>
+  </div>
 </div>
-<div class="modal-body p-4">
-<input type="hidden" id="client-id">
-<div class="mb-3">
-<label class="form-label small fw-bold">姓名 *</label>
-<input type="text" class="form-control" id="client-name">
-</div>
-<div class="row g-2 mb-3">
-<div class="col-6">
-<label class="form-label small fw-bold">性別</label>
-<select class="form-select" id="client-gender">
-<option value="">請選擇</option>
-<option>男</option>
-<option>女</option>
-</select>
-</div>
-<div class="col-6">
-<label class="form-label small fw-bold">生日 *</label>
-<input type="date" class="form-control" id="client-birthday">
-</div>
-</div>
-<div class="mb-3">
-<label class="form-label small fw-bold">來源</label>
-<div class="row g-2 align-items-center">
-<div class="col-4" id="source-type-col">
-<select class="form-select form-select-sm" id="client-source-type" onchange="onSourceTypeChange()">
-<option>緣故</option>
-<option>轉介紹</option>
-<option>陌生</option>
-</select>
-</div>
-<div class="col-4" id="source-referrer-col" style="display:none;position:relative">
-<input type="text" class="form-control form-control-sm" id="client-source-referrer" placeholder="轉介紹中心" oninput="onReferrerInput(this.value)" autocomplete="off">
-<div id="referrer-dropdown" class="dropdown-menu shadow w-100 p-0" style="max-height:150px;overflow-y:auto;display:none;position:absolute;z-index:1050">
-</div>
-</div>
-<div class="col-8" id="source-text-col">
-<input type="text" class="form-control form-control-sm" id="client-source-text">
-</div>
-</div>
-</div>
-<div class="mb-3">
-<label class="form-label small fw-bold">身分證字號</label>
-<input type="text" class="form-control" id="client-idNumber">
-</div>
-<div class="mb-3">
-<label class="form-label small fw-bold">職業</label>
-<input type="text" class="form-control" id="client-occupation">
-</div>
-<div class="mb-3">
-<label class="form-label small fw-bold">電話</label>
-<input type="tel" class="form-control" id="client-phone">
-</div>
-<div class="mb-3">
-<label class="form-label small fw-bold">地址</label>
-<input type="text" class="form-control" id="client-address">
-</div>
-<div class="mb-3">
-<label class="form-label small fw-bold">既有客戶</label>
-<div class="d-flex flex-wrap gap-2" id="tag-options">
-<div class="form-check">
-<input class="form-check-input client-tag-checkbox" type="checkbox" value="人壽" id="tag-0">
-<label class="form-check-label" for="tag-0">人壽</label>
-</div>
-<div class="form-check">
-<input class="form-check-input client-tag-checkbox" type="checkbox" value="車險" id="tag-1">
-<label class="form-check-label" for="tag-1">車險</label>
-</div>
-<div class="form-check">
-<input class="form-check-input client-tag-checkbox" type="checkbox" value="旅平卡" id="tag-2">
-<label class="form-check-label" for="tag-2">旅平卡</label>
-</div>
-<div class="form-check">
-<input class="form-check-input client-tag-checkbox" type="checkbox" value="產險" id="tag-3">
-<label class="form-check-label" for="tag-3">產險</label>
-</div>
-</div>
-</div>
-<div class="mb-3">
-<div class="d-flex justify-content-between align-items-center mb-2">
-<label class="form-label small fw-bold mb-0">車輛資訊</label>
-<button type="button" class="btn btn-outline-primary btn-sm py-0 px-2" onclick="addVehicleRow()">
-<i class="bi bi-plus">
-</i> 新增車輛</button>
-</div>
-<div id="vehicle-rows-container">
-</div>
-</div>
-</div>
-<div class="modal-footer bg-light">
-<button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">取消</button>
-<button type="button" class="btn btn-primary btn-sm px-4 fw-bold" id="save-client-btn" onclick="saveClient()">新增</button>
-</div>
-</div>
-</div>
-</div>
+
+<!-- 訪談紀錄 Modal -->
 <div class="modal fade" id="interview-modal" tabindex="-1">
-<div class="modal-dialog modal-dialog-scrollable modal-lg">
-<div class="modal-content rounded-4 border-0 shadow">
-<div class="modal-header bg-light">
-<h5 class="modal-title fw-bold" id="interview-modal-title">
-<i class="bi bi-journal-text">
-</i> 訪談紀錄</h5>
-<button type="button" class="btn-close" data-bs-dismiss="modal">
-</button>
+  <div class="modal-dialog modal-dialog-scrollable modal-lg">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title fw-bold" id="interview-modal-title"><i class="bi bi-journal-text"></i> 訪談紀錄</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <input type="hidden" id="current-interview-client-id">
+        <input type="hidden" id="current-interview-id">
+        
+        <div class="card border-0 bg-light p-3 mb-4 rounded-3 shadow-sm">
+          <h6 class="fw-bold text-primary mb-3" id="interview-form-title"><i class="bi bi-plus-circle"></i> 新增本次訪談紀錄</h6>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label small fw-bold">訪談日期</label>
+              <input type="date" class="form-control" id="interview-date">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label small fw-bold">訪談地點</label>
+              <input type="text" class="form-control" id="interview-location" placeholder="">
+            </div>
+            <div class="col-12">
+              <label class="form-label small fw-bold">訪談內容</label>
+              <textarea class="form-control" id="interview-content" rows="3" placeholder=""></textarea>
+            </div>
+            <div class="col-12 text-end">
+              <button type="button" class="btn btn-secondary btn-sm px-3 me-2" id="cancel-interview-edit-btn" style="display: none;" onclick="resetInterviewForm()">取消編輯</button>
+              <button type="button" class="btn btn-primary btn-sm px-4 fw-bold" id="save-interview-btn" onclick="saveInterview()">儲存訪談紀錄</button>
+            </div>
+          </div>
+        </div>
+
+        <h6 class="fw-bold mb-3 text-secondary"><i class="bi bi-clock-history"></i> 歷史訪談紀錄</h6>
+        <div id="interview-list"></div>
+      </div>
+    </div>
+  </div>
 </div>
-<div class="modal-body p-4">
-<input type="hidden" id="current-interview-client-id">
-<input type="hidden" id="current-interview-id">
-<div class="card border-0 bg-light p-3 mb-4 rounded-3 shadow-sm">
-<h6 class="fw-bold text-primary mb-3" id="interview-form-title">
-<i class="bi bi-plus-circle">
-</i> 新增本次訪談紀錄</h6>
-<div class="row g-3">
-<div class="col-md-6">
-<label class="form-label small fw-bold">訪談日期</label>
-<input type="date" class="form-control" id="interview-date">
-</div>
-<div class="col-md-6">
-<label class="form-label small fw-bold">訪談地點</label>
-<input type="text" class="form-control" id="interview-location">
-</div>
-<div class="col-12">
-<label class="form-label small fw-bold">訪談內容</label>
-<textarea class="form-control" id="interview-content" rows="3">
-</textarea>
-</div>
-<div class="col-12 text-end">
-<button type="button" class="btn btn-secondary btn-sm px-3 me-2" id="cancel-interview-edit-btn" style="display:none" onclick="resetInterviewForm()">取消編輯</button>
-<button type="button" class="btn btn-primary btn-sm px-4 fw-bold" id="save-interview-btn" onclick="saveInterview()">儲存訪談紀錄</button>
-</div>
-</div>
-</div>
-<h6 class="fw-bold mb-3 text-secondary">
-<i class="bi bi-clock-history">
-</i> 歷史訪談紀錄</h6>
-<div id="interview-list">
-</div>
-</div>
-</div>
-</div>
-</div>
+
+<!-- 備註 Modal -->
 <div class="modal fade" id="note-modal" tabindex="-1">
-<div class="modal-dialog">
-<div class="modal-content rounded-4 border-0 shadow">
-<div class="modal-header bg-light">
-<h5 class="modal-title fw-bold" id="note-modal-title">
-<i class="bi bi-sticky">
-</i> 客戶備註</h5>
-<button type="button" class="btn-close" data-bs-dismiss="modal">
-</button>
+  <div class="modal-dialog">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header bg-light">
+        <h5 class="modal-title fw-bold" id="note-modal-title"><i class="bi bi-sticky"></i> 客戶備註</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <input type="hidden" id="current-note-client-id">
+        <div class="mb-3">
+          <textarea class="form-control" id="client-note-content" rows="5" placeholder="輸入備註內容..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">取消</button>
+        <button type="button" class="btn btn-warning btn-sm px-4 fw-bold text-dark" id="save-note-btn" onclick="saveNote()">儲存備註</button>
+      </div>
+    </div>
+  </div>
 </div>
-<div class="modal-body p-4">
-<input type="hidden" id="current-note-client-id">
-<div class="mb-3">
-<textarea class="form-control" id="client-note-content" rows="5" placeholder="輸入備註內容...">
-</textarea>
-</div>
-</div>
-<div class="modal-footer bg-light">
-<button type="button" class="btn btn-secondary btn-sm px-4" data-bs-dismiss="modal">取消</button>
-<button type="button" class="btn btn-warning btn-sm px-4 fw-bold text-dark" id="save-note-btn" onclick="saveNote()">儲存備註</button>
-</div>
-</div>
-</div>
-</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-const API_URL = 'https://script.google.com/macros/s/AKfycbxik28XYTitdvmd1XFjJxWu1aCzU7-bOSSjVNHBlmpu3kxYLWrMTgeoIPSjhc1ACtpz/exec';
-const $ = id => document.getElementById(id);
-const val = id => $(id).value;
-const set = (id, v) => $(id).value = v ?? '';
-let allClients = [], allInterviews = [], editingId = null, clientModal, interviewModal, noteModal;
-let clientSaving = false, pendingClientId = null;
-let pendingAddPayload = null;
-const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const arg = v => esc(JSON.stringify(String(v ?? '')));
-const icon = n => `<i class="bi bi-${n}"></i>`;
-function formatPhone(phone) { let p = String(phone || '').trim(); return p.length === 9 && p.startsWith('9') ? '0' + p : p; }
-function newClientId() {
-    return 'C_' + (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : Date.now() + '_' + Math.random().toString(36).slice(2));
-}
-async function post(payload) { const r = await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) }); if (!r.ok)
-    throw Error('HTTP ' + r.status); const d = await r.json(); if (d.status !== 'success')
-    throw Error(d.message || '未知錯誤'); return d; }
-// 使用原始版本的 Bootstrap 初始化方式。
-document.addEventListener('DOMContentLoaded', () => {
-    try {
-        clientModal = new bootstrap.Modal($('client-modal'));
-        interviewModal = new bootstrap.Modal($('interview-modal'));
-        noteModal = new bootstrap.Modal($('note-modal'));
-        $('client-modal').addEventListener('hide.bs.modal', event => {
-            if (clientSaving) {
-                event.preventDefault();
-                return;
-            }
-            if (pendingAddPayload) {
-                if (!confirm('上次新增尚未確認，可能已經寫入。建議先重試確認。確定放棄本次操作並重新載入名單嗎？')) {
-                    event.preventDefault();
-                    return;
-                }
-                pendingAddPayload = null;
-                pendingClientId = null;
-                loadData();
-            }
-        });
-        loadData();
-    }
-    catch (error) {
-        console.error(error);
-        $('client-list').textContent = '系統初始化失敗：' + error.message;
-    }
+const API_URL = "https://script.google.com/macros/s/AKfycbxik28XYTitdvmd1XFjJxWu1aCzU7-bOSSjVNHBlmpu3kxYLWrMTgeoIPSjhc1ACtpz/exec"; 
+let allClients = [];
+let allInterviews = [];
+let editingId = null;
+let clientModal = null;
+let interviewModal = null;
+let noteModal = null;
+
+document.addEventListener("DOMContentLoaded", () => {
+  clientModal = new bootstrap.Modal(document.getElementById('client-modal'));
+  interviewModal = new bootstrap.Modal(document.getElementById('interview-modal'));
+  noteModal = new bootstrap.Modal(document.getElementById('note-modal'));
+  loadData();
 });
-function onSourceTypeChange() { let yes = val('client-source-type') === '轉介紹'; $('source-referrer-col').style.display = yes ? 'block' : 'none'; $('source-text-col').className = yes ? 'col-4' : 'col-8'; if (!yes)
-    set('client-source-referrer', ''); }
-function onReferrerInput(keyword) { let d = $('referrer-dropdown'), k = keyword.trim().toLowerCase(); let matches = k ? allClients.filter(c => String(c.name || '').toLowerCase().includes(k)) : []; d.innerHTML = matches.map(c => `<button type="button" class="dropdown-item small py-1" onclick="selectReferrer(${arg(c.name)})">${esc(c.name)}</button>`).join(''); d.style.display = matches.length ? 'block' : 'none'; }
-function selectReferrer(name) { set('client-source-referrer', name); $('referrer-dropdown').style.display = 'none'; }
-document.addEventListener('click', e => { let d = $('referrer-dropdown'); if (d && !d.contains(e.target) && !$('client-source-referrer').contains(e.target))
-    d.style.display = 'none'; });
-async function loadData(clientId) {
-    const el = $('client-list');
-    el.textContent = '正在連線 Google Apps Script…';
-    try {
-        const r = await fetch(API_URL);
-        if (!r.ok)
-            throw Error('HTTP ' + r.status);
-        const raw = await r.text();
-        let d;
-        try {
-            d = JSON.parse(raw);
+
+// 自動補回開頭 0
+function formatPhone(phone) {
+  if (!phone) return '';
+  let p = String(phone).trim();
+  if (p.length === 9 && p.startsWith('9')) {
+    p = '0' + p;
+  }
+  return p;
+}
+
+function onSourceTypeChange() {
+  const type = document.getElementById('client-source-type').value;
+  const referrerCol = document.getElementById('source-referrer-col');
+  const typeCol = document.getElementById('source-type-col');
+  const textCol = document.getElementById('source-text-col');
+  
+  if (type === '轉介紹') {
+    referrerCol.style.display = 'block';
+    typeCol.className = 'col-4';
+    referrerCol.className = 'col-4';
+    textCol.className = 'col-4';
+  } else {
+    referrerCol.style.display = 'none';
+    document.getElementById('client-source-referrer').value = '';
+    typeCol.className = 'col-4';
+    textCol.className = 'col-8';
+  }
+}
+
+function onReferrerInput(keyword) {
+  const dropdown = document.getElementById('referrer-dropdown');
+  if (!keyword || keyword.trim() === '') {
+    dropdown.style.display = 'none';
+    return;
+  }
+  const kw = keyword.toLowerCase();
+  const matches = allClients.filter(c => c.name && c.name.toLowerCase().includes(kw));
+  
+  if (matches.length === 0) {
+    dropdown.style.display = 'none';
+    return;
+  }
+
+  let html = '';
+  matches.forEach(m => {
+    html += `<button type="button" class="dropdown-item small py-1" onclick="selectReferrer('${m.name}')">${m.name}</button>`;
+  });
+  dropdown.innerHTML = html;
+  dropdown.style.display = 'block';
+}
+
+function selectReferrer(name) {
+  document.getElementById('client-source-referrer').value = name;
+  document.getElementById('referrer-dropdown').style.display = 'none';
+}
+
+document.addEventListener('click', function(e) {
+  const dropdown = document.getElementById('referrer-dropdown');
+  const input = document.getElementById('client-source-referrer');
+  if (dropdown && input && !input.contains(e.target) && !dropdown.contains(e.target)) {
+    dropdown.style.display = 'none';
+  }
+});
+
+function loadData() {
+  fetch(API_URL)
+    .then(res => res.json())
+    .then(data => {
+      allClients = data.clients || [];
+      allInterviews = data.interviews || [];
+      checkTodayBirthdays();
+      filterClients();
+    })
+    .catch(err => {
+      console.error(err);
+      document.getElementById('client-list').innerHTML = '<div class="text-center text-danger py-4">載入失敗，請檢查 API 網址</div>';
+    });
+}
+
+function checkTodayBirthdays() {
+  const today = new Date();
+  const currentMonth = String(today.getMonth() + 1).padStart(2, '0');
+  const currentDate = String(today.getDate()).padStart(2, '0');
+
+  const todayBirthdays = allClients.filter(c => {
+    if (!c.birthday) return false;
+    const parts = c.birthday.split('-');
+    if (parts.length === 3) {
+      return parts[1] === currentMonth && parts[2] === currentDate;
+    }
+    return false;
+  });
+
+  const banner = document.getElementById('today-birthday-banner');
+  const content = document.getElementById('today-birthday-content');
+
+  if (todayBirthdays.length > 0) {
+    let namesHtml = todayBirthdays.map(c => 
+      `<button class="btn btn-sm btn-dark py-0 px-2 me-1 fw-bold" onclick="jumpToClientByName('${c.name}')"><i class="bi bi-gift-fill me-1"></i>${c.name}</button>`
+    ).join('');
+
+    content.innerHTML = `<div><strong>本日壽星 (${today.getMonth() + 1}月${today.getDate()}日)：</strong> ${namesHtml} 記得送上祝賀！</div>`;
+    banner.style.display = 'block';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+function calculateBirthdayInfo(birthdayStr) {
+  if (!birthdayStr) return { daysLeft: 0, currentAge: 0, insuranceAge: 0, daysToInsuranceAgeInc: 0 };
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  
+  const parts = birthdayStr.split('-');
+  if (parts.length !== 3) return { daysLeft: 0, currentAge: 0, insuranceAge: 0, daysToInsuranceAgeInc: 0 };
+  
+  const birthYear = parseInt(parts[0]);
+  const birthMonth = parseInt(parts[1]) - 1;
+  const birthDay = parseInt(parts[2]);
+  
+  const currentYear = today.getFullYear();
+  
+  let currentAge = currentYear - birthYear;
+  const birthdayThisYear = new Date(currentYear, birthMonth, birthDay);
+  birthdayThisYear.setHours(0,0,0,0);
+  if (today < birthdayThisYear) {
+    currentAge -= 1;
+  }
+  
+  let nextBirthday = new Date(currentYear, birthMonth, birthDay);
+  nextBirthday.setHours(0,0,0,0);
+  if (nextBirthday < today) {
+    nextBirthday.setFullYear(currentYear + 1);
+  }
+  const diffTime = nextBirthday - today;
+  const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  let lastBday = new Date(currentYear, birthMonth, birthDay);
+  lastBday.setHours(0,0,0,0);
+  if (today < lastBday) {
+    lastBday.setFullYear(currentYear - 1);
+  }
+  
+  let insuranceAge = currentAge;
+  let halfYearMark = new Date(lastBday);
+  halfYearMark.setMonth(halfYearMark.getMonth() + 6);
+  if (today >= halfYearMark) {
+    insuranceAge = currentAge + 1;
+  }
+  
+  let incDate = new Date(lastBday);
+  incDate.setMonth(incDate.getMonth() + 6);
+  if (incDate <= today) {
+    incDate.setFullYear(incDate.getFullYear() + 1);
+  }
+  const diffInsTime = incDate - today;
+  const daysToInsuranceAgeInc = Math.ceil(diffInsTime / (1000 * 60 * 60 * 24));
+  
+  return { daysLeft, currentAge, insuranceAge, daysToInsuranceAgeInc };
+}
+
+function filterClients() {
+  const keywordInput = document.getElementById('search-input');
+  const keyword = keywordInput ? keywordInput.value.toLowerCase().trim() : '';
+  const selectedFilter = document.getElementById('month-select').value;
+
+  let sortMode = 'default';
+  if (selectedFilter === 'sort-age-desc') sortMode = 'age-desc';
+  if (selectedFilter === 'sort-ins-asc') sortMode = 'ins-asc';
+
+  const filtered = allClients.filter(c => {
+    const phoneFormatted = formatPhone(c.phone);
+    
+    let matchKeyword = true;
+    if (keyword !== '') {
+      const nameMatch = c.name && String(c.name).toLowerCase().includes(keyword);
+      const phoneMatch = (c.phone && String(c.phone).toLowerCase().includes(keyword)) || phoneFormatted.includes(keyword);
+      const addressMatch = c.address && String(c.address).toLowerCase().includes(keyword);
+      const idMatch = c.idNumber && String(c.idNumber).toLowerCase().includes(keyword);
+      const occMatch = c.occupation && String(c.occupation).toLowerCase().includes(keyword);
+      const tagMatch = Array.isArray(c.tags) && c.tags.some(t => String(t).toLowerCase().includes(keyword));
+      const vehicleMatch = Array.isArray(c.vehicles) && c.vehicles.some(v => v.plate && String(v.plate).toLowerCase().includes(keyword));
+      const noteMatch = c.note && String(c.note).toLowerCase().includes(keyword);
+      const sourceTypeMatch = c.source && c.source.type && String(c.source.type).toLowerCase().includes(keyword);
+      const sourceRefMatch = c.source && c.source.referrerName && String(c.source.referrerName).toLowerCase().includes(keyword);
+      const sourceTextMatch = c.source && c.source.text && String(c.source.text).toLowerCase().includes(keyword);
+
+      matchKeyword = Boolean(nameMatch || phoneMatch || addressMatch || idMatch || occMatch || tagMatch || vehicleMatch || noteMatch || sourceTypeMatch || sourceRefMatch || sourceTextMatch);
+    }
+    
+    let matchFilter = true;
+    if (selectedFilter) {
+      if (selectedFilter.startsWith('sort-')) {
+        matchFilter = true;
+      } else if (selectedFilter.startsWith('source-')) {
+        const targetSource = selectedFilter.split('-')[1];
+        matchFilter = Boolean(c.source && c.source.type === targetSource);
+      } else if (selectedFilter.startsWith('gender-')) {
+        const targetGender = selectedFilter.split('-')[1];
+        matchFilter = Boolean(c.gender === targetGender);
+      } else if (selectedFilter === 'type-life') {
+        matchFilter = Boolean(Array.isArray(c.tags) && c.tags.includes('人壽'));
+      } else if (selectedFilter === 'type-property') {
+        matchFilter = Boolean(Array.isArray(c.tags) && (c.tags.includes('車險') || c.tags.includes('旅平卡') || c.tags.includes('產險')));
+      } else if (selectedFilter.startsWith('ins-')) {
+        const targetMonth = selectedFilter.split('-')[1];
+        matchFilter = false;
+        if (Array.isArray(c.vehicles) && c.vehicles.length > 0) {
+          matchFilter = c.vehicles.some(v => {
+            if (!v.expiry) return false;
+            const parts = String(v.expiry).split('-');
+            if (parts.length === 3) {
+              return parts[1] === targetMonth;
+            }
+            return false;
+          });
         }
-        catch (e) {
-            throw Error('API 未回傳 JSON，請檢查 Apps Script 部署與存取權限');
+      } else {
+        if (c.birthday) {
+          const parts = String(c.birthday).split('-');
+          if (parts.length === 3) {
+            matchFilter = (parts[1] === selectedFilter);
+          } else {
+            matchFilter = false;
+          }
+        } else {
+          matchFilter = false;
         }
-        if (!Array.isArray(d.clients) || !Array.isArray(d.interviews))
-            throw Error('API 回傳格式不符，請檢查 Code.gs');
-        allClients = d.clients;
-        allInterviews = d.interviews;
-        checkTodayBirthdays();
-        filterClients();
-        if (clientId)
-            renderInterviewList(clientId);
+      }
     }
-    catch (e) {
-        console.error(e);
-        el.textContent = '載入失敗：' + e.message;
-    }
+    return matchKeyword && matchFilter;
+  });
+
+  renderClients(filtered, sortMode);
 }
-function checkTodayBirthdays() { let now = new Date(), m = String(now.getMonth() + 1).padStart(2, '0'), d = String(now.getDate()).padStart(2, '0'); let list = allClients.filter(c => String(c.birthday || '').slice(5) === m + '-' + d); $('today-birthday-banner').style.display = list.length ? 'block' : 'none'; $('today-birthday-content').innerHTML = `<div><strong>本日壽星 (${now.getMonth() + 1}月${now.getDate()}日)：</strong> ${list.map(c => `<button class="btn btn-sm btn-dark py-0 px-2 me-1 fw-bold" onclick="jumpToClientByName(${arg(c.name)})">${icon('gift-fill')} ${esc(c.name)}</button>`).join('')} 記得送上祝賀！</div>`; }
-function calculateBirthdayInfo(s) { if (!s || s.split('-').length !== 3)
-    return { daysLeft: 0, currentAge: 0, insuranceAge: 0, daysToInsuranceAgeInc: 0 }; let today = new Date(); today.setHours(0, 0, 0, 0); let [y, m, d] = s.split('-').map(Number), year = today.getFullYear(), b = new Date(year, m - 1, d), age = year - y - (today < b ? 1 : 0), next = new Date(b), last = new Date(b); if (next < today)
-    next.setFullYear(year + 1); if (today < last)
-    last.setFullYear(year - 1); let half = new Date(last); half.setMonth(half.getMonth() + 6); let ins = age + (today >= half ? 1 : 0), inc = new Date(half); if (inc <= today)
-    inc.setFullYear(inc.getFullYear() + 1); return { daysLeft: Math.ceil((next - today) / 86400000), currentAge: age, insuranceAge: ins, daysToInsuranceAgeInc: Math.ceil((inc - today) / 86400000) }; }
-function filterClients() { let k = val('search-input').trim().toLowerCase(), f = val('month-select'); let list = allClients.filter(c => { let fields = [c.name, c.phone, formatPhone(c.phone), c.address, c.idNumber, c.occupation, c.note, c.source?.type, c.source?.referrerName, c.source?.text, ...(c.tags || []), ...(c.vehicles || []).map(v => v.plate)]; if (k && !fields.some(v => String(v ?? '').toLowerCase().includes(k)))
-    return false; if (!f || f.startsWith('sort-'))
-    return true; if (f.startsWith('source-'))
-    return c.source?.type === f.slice(7); if (f.startsWith('gender-'))
-    return c.gender === f.slice(7); if (f === 'type-life')
-    return (c.tags || []).includes('人壽'); if (f === 'type-property')
-    return (c.tags || []).some(t => ['車險', '旅平卡', '產險'].includes(t)); if (f.startsWith('ins-'))
-    return (c.vehicles || []).some(v => String(v.expiry || '').split('-')[1] === f.slice(4)); return String(c.birthday || '').split('-')[1] === f; }); renderClients(list, f); }
-function jumpToClientByName(name) { let c = allClients.find(c => c.name === name); if (!c) {
-    alert('找不到名單：' + name);
+
+function jumpToClientByName(name) {
+  const target = allClients.find(c => c.name === name);
+  if (!target) {
+    alert(`找不到名單：「${name}」`);
     return;
-} set('search-input', name); filterClients(); setTimeout(() => { let el = $('client-card-' + c.id); if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    el.classList.add('border', 'border-primary', 'shadow');
-    setTimeout(() => el.classList.remove('border', 'border-primary', 'shadow'), 2000);
-} }, 100); }
-function renderClients(list, f) { $('client-count').innerText = list.length + ' 名單'; let info = c => calculateBirthdayInfo(c.birthday); list.sort((a, b) => f === 'sort-age-desc' ? info(b).currentAge - info(a).currentAge : f === 'sort-ins-asc' ? info(a).daysToInsuranceAgeInc - info(b).daysToInsuranceAgeInc : info(a).daysLeft - info(b).daysLeft); $('client-list').innerHTML = list.length ? list.map(c => { let i = info(c), p = formatPhone(c.phone) || '未填寫', count = allInterviews.filter(x => x.clientId == c.id).length; let gender = c.gender === '男' ? '<span class="badge ms-1" style="background-color:#e3f2fd;color:#0d6efd;border:1px solid #b6d4fe">男</span>' : c.gender === '女' ? '<span class="badge ms-1" style="background-color:#fce7f3;color:#d63384;border:1px solid #f8d7da">女</span>' : ''; let note = String(c.note || '').trim(); let ref = c.source?.type === '轉介紹' && c.source.referrerName ? `<button class="btn btn-sm btn-outline-primary py-0 px-1 ms-1 me-1" style="font-size:.75rem" onclick="jumpToClientByName(${arg(c.source.referrerName)})">${icon('person-fill')} ${esc(c.source.referrerName)}</button>` : ''; let source = c.source?.type ? `<div class="small text-secondary mb-1">${icon('person-lines-fill')} 來源：${esc(c.source.type)} ${ref}${esc(c.source.text)}</div>` : ''; let tags = (c.tags || []).length ? `<div class="d-flex flex-wrap gap-1 mt-2">${c.tags.map(t => `<span class="badge bg-success bg-opacity-10 text-success border border-success px-2 py-1" style="font-size:.75rem">${icon('tag-fill')} ${esc(t)}</span>`).join('')}</div>` : ''; let vehicles = (c.vehicles || []).length ? `<div class="mt-2 pt-2 border-top small text-secondary">${c.vehicles.map(v => `<div class="d-flex align-items-center gap-2 mb-1"><span class="badge bg-warning text-dark border border-warning bg-opacity-25">${icon(v.type === '汽車' ? 'car-front' : v.type === '重機' ? 'speedometer2' : 'scooter')} ${esc(v.type || '機車')}</span><span>車牌：<strong>${esc(v.plate || '未填寫')}</strong></span><span class="text-muted ms-2">${icon('shield-exclamation')} 強制險到期：${esc(v.expiry || '未填寫')}</span></div>`).join('')}</div>` : ''; return `<div class="card border-0 shadow-sm mb-3 rounded-4" id="client-card-${esc(c.id)}"><div class="card-body p-3"><div class="d-flex justify-content-between align-items-center mb-2"><div class="d-flex align-items-center flex-wrap gap-1" style="flex-grow:1;min-width:0"><h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-1"><span>${esc(c.name || '未命名')}</span>${gender}</h5><span class="fs-6 fw-normal text-muted">${i.currentAge}歲</span><button class="btn btn-sm ${note ? 'btn-warning text-dark fw-bold shadow-sm' : 'btn-outline-secondary'} py-0 px-2" style="font-size:.75rem" onclick="openNoteModal(${arg(c.id)})">${icon(note ? 'sticky-fill' : 'sticky')} 備註</button></div><div class="d-flex align-items-center gap-1 ms-2" style="flex-shrink:0"><button class="btn btn-sm btn-outline-secondary border-0 p-1" onclick="openModalForEdit(${arg(c.id)})" title="編輯">${icon('pencil-fill')}</button><button class="btn btn-sm btn-outline-danger border-0 p-1" onclick="deleteClient(${arg(c.id)})" title="刪除">${icon('trash-fill')}</button></div></div><div class="d-flex flex-wrap align-items-center gap-2 mb-2"><span class="badge bg-info text-dark bg-opacity-25 border border-info py-1 px-2" style="font-size:.75rem">${icon('shield-plus')} 保險年齡${i.insuranceAge}歲 (再過${i.daysToInsuranceAgeInc}天+1)</span><span class="badge bg-secondary bg-opacity-10 text-secondary border py-1 px-2" style="cursor:pointer;font-size:.75rem" onclick="openInterviewModal(${arg(c.id)})">${icon('chat-left-text')} 訪談紀錄 (${count})</span></div>${source}<div class="small text-secondary mb-1">${icon('calendar-event')} 生日：${esc(c.birthday)} <span class="ms-3">${icon('card-heading')} 身分證：${esc(c.idNumber || '未填寫')}</span></div><div class="small text-secondary mb-1">${c.occupation ? `<span class="me-3">${icon('briefcase-fill')} 職業：${esc(c.occupation)}</span>` : ''}${icon('telephone-fill')} 電話：<a href="tel:${esc(p)}" class="text-decoration-none">${esc(p)}</a></div><div class="small text-secondary mb-1">${icon('geo-alt-fill')} 地址：${esc(c.address || '未填寫')}</div>${tags}${vehicles}</div></div>`; }).join('') : '<div class="text-center py-5 text-muted">符合條件的客戶資料</div>'; }
-function addVehicleRow(type = '機車', plate = '', expiry = '') { let div = document.createElement('div'); div.className = 'row g-2 align-items-center mb-2 vehicle-item-row bg-light p-2 rounded-3 border'; div.innerHTML = `<div class="col-3"><select class="form-select form-select-sm vehicle-type">${['機車', '重機', '汽車'].map(t => `<option ${t === type ? 'selected' : ''}>${t}</option>`).join('')}</select></div><div class="col-4"><input type="text" class="form-control form-control-sm vehicle-plate" placeholder="車牌號碼" value="${esc(plate)}"></div><div class="col-4"><input type="${expiry ? 'date' : 'text'}" class="form-control form-control-sm vehicle-expiry" placeholder="強制險到期日" value="${esc(expiry)}" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'"></div><div class="col-1 text-end"><button type="button" class="btn btn-sm text-danger p-0">${icon('trash-fill')}</button></div>`; div.querySelector('button').onclick = () => div.remove(); $('vehicle-rows-container').appendChild(div); }
-function fillClient(c) { for (let k of ['id', 'name', 'gender', 'birthday', 'idNumber', 'occupation', 'address'])
-    set('client-' + k, c[k]); set('client-phone', formatPhone(c.phone)); set('client-source-type', c.source?.type || '緣故'); onSourceTypeChange(); set('client-source-referrer', c.source?.referrerName); set('client-source-text', c.source?.text); document.querySelectorAll('.client-tag-checkbox').forEach(cb => cb.checked = (c.tags || []).includes(cb.value)); $('vehicle-rows-container').innerHTML = ''; (c.vehicles || []).forEach(v => addVehicleRow(v.type, v.plate, v.expiry)); }
-function openModalForAdd() { if (!clientModal) {
-    alert('視窗尚未就緒，請重新整理頁面');
-    return;
-} if (clientSaving)
-    return; if (pendingAddPayload) {
-    clientModal.show();
-    return;
-} editingId = null; pendingClientId = newClientId(); pendingAddPayload = null; $('modal-title').innerText = '新增名單'; $('save-client-btn').innerText = '新增'; fillClient({}); clientModal.show(); }
-function openModalForEdit(id) { if (!clientModal) {
-    alert('視窗尚未就緒，請重新整理頁面');
-    return;
-} if (clientSaving)
-    return; if (pendingAddPayload) {
-    alert('請先確認上一筆新增結果。');
-    clientModal.show();
-    return;
-} let c = allClients.find(c => c.id == id); if (!c)
-    return; editingId = id; pendingClientId = null; pendingAddPayload = null; $('modal-title').innerText = '編輯名單資料'; $('save-client-btn').innerText = '儲存'; fillClient(c); clientModal.show(); }
-async function saveClient() {
-    if (clientSaving)
-        return;
-    let name = val('client-name').trim(), birthday = val('client-birthday');
-    if (!name || !birthday) {
-        alert('請填寫姓名與生日！');
-        return;
+  }
+  document.getElementById('search-input').value = name;
+  filterClients();
+  
+  setTimeout(() => {
+    const cardEl = document.getElementById(`client-card-${target.id}`);
+    if (cardEl) {
+      cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      cardEl.classList.add('border', 'border-primary', 'shadow');
+      setTimeout(() => {
+        cardEl.classList.remove('border', 'border-primary', 'shadow');
+      }, 2000);
     }
-    let sourceType = val('client-source-type'), existing = allClients.find(c => c.id === editingId);
-    let payload = { action: editingId ? 'update' : 'add', id: editingId || (pendingClientId || (pendingClientId = newClientId())), name, gender: val('client-gender'), birthday, source: { type: sourceType, referrerName: sourceType === '轉介紹' ? val('client-source-referrer').trim() : '', text: val('client-source-text').trim() }, idNumber: val('client-idNumber').trim(), occupation: val('client-occupation').trim(), phone: val('client-phone').trim(), address: val('client-address').trim(), tags: [...document.querySelectorAll('.client-tag-checkbox:checked')].map(x => x.value), vehicles: [...document.querySelectorAll('.vehicle-item-row')].map(r => ({ type: r.querySelector('.vehicle-type').value, plate: r.querySelector('.vehicle-plate').value.trim(), expiry: r.querySelector('.vehicle-expiry').value })), note: existing?.note || '' };
-    if (!editingId && pendingAddPayload) {
-        if (JSON.stringify(payload) !== JSON.stringify(pendingAddPayload)) {
-            alert('上次新增尚未確認，請先以原本資料重試。確認成功後再編輯客戶資料。');
-            return;
+  }, 100);
+}
+
+function renderClients(clients, sortMode = 'default') {
+  const container = document.getElementById('client-list');
+  document.getElementById('client-count').innerText = `${clients.length} 名單`;
+  
+  if (clients.length === 0) {
+    container.innerHTML = '<div class="text-center py-5 text-muted">符合條件的客戶資料</div>';
+    return;
+  }
+
+  if (sortMode === 'age-desc') {
+    clients.sort((a, b) => {
+      return calculateBirthdayInfo(b.birthday).currentAge - calculateBirthdayInfo(a.birthday).currentAge;
+    });
+  } else if (sortMode === 'ins-asc') {
+    clients.sort((a, b) => {
+      return calculateBirthdayInfo(a.birthday).daysToInsuranceAgeInc - calculateBirthdayInfo(b.birthday).daysToInsuranceAgeInc;
+    });
+  } else {
+    clients.sort((a, b) => {
+      return calculateBirthdayInfo(a.birthday).daysLeft - calculateBirthdayInfo(b.birthday).daysLeft;
+    });
+  }
+
+  let html = '';
+  clients.forEach(c => {
+    const info = calculateBirthdayInfo(c.birthday);
+    const clientInterviews = allInterviews.filter(i => i.clientId == c.id);
+    const phoneStr = formatPhone(c.phone) || '未填寫';
+    
+    let genderBadge = '';
+    if (c.gender === '男') {
+      genderBadge = `<span class="badge ms-1" style="background-color: #e3f2fd; color: #0d6efd; border: 1px solid #b6d4fe;">男</span>`;
+    } else if (c.gender === '女') {
+      genderBadge = `<span class="badge ms-1" style="background-color: #fce7f3; color: #d63384; border: 1px solid #f8d7da;">女</span>`;
+    }
+
+    let vehiclesHtml = '';
+    if (c.vehicles && c.vehicles.length > 0) {
+      vehiclesHtml = `<div class="mt-2 pt-2 border-top small text-secondary">`;
+      c.vehicles.forEach(v => {
+        let typeIcon = 'bi-scooter';
+        if (v.type === '汽車') {
+          typeIcon = 'bi-car-front';
+        } else if (v.type === '重機') {
+          typeIcon = 'bi-speedometer2';
         }
-        payload = pendingAddPayload;
+        vehiclesHtml += `
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="badge bg-warning text-dark border border-warning bg-opacity-25">
+              <i class="bi ${typeIcon}"></i> ${v.type || '機車'}
+            </span>
+            <span>車牌：<strong>${v.plate || '未填寫'}</strong></span>
+            <span class="text-muted ms-2"><i class="bi bi-shield-exclamation"></i> 強制險到期：${v.expiry || '未填寫'}</span>
+          </div>
+        `;
+      });
+      vehiclesHtml += `</div>`;
     }
-    else if (!editingId) {
-        pendingAddPayload = payload;
+
+    let tagsHtml = '';
+    if (c.tags && c.tags.length > 0) {
+      tagsHtml = `<div class="d-flex flex-wrap gap-1 mt-2">`;
+      c.tags.forEach(t => {
+        tagsHtml += `<span class="badge bg-success bg-opacity-10 text-success border border-success px-2 py-1" style="font-size: 0.75rem;"><i class="bi bi-tag-fill me-1"></i>${t}</span>`;
+      });
+      tagsHtml += `</div>`;
     }
-    let btn = $('save-client-btn'), label = editingId ? '儲存' : '新增';
-    clientSaving = true;
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> 處理中...';
-    let controls = [...$('client-modal').querySelectorAll('input,select,button')].filter(x => x !== btn && !x.disabled);
-    controls.forEach(x => x.disabled = true);
-    let success = false;
-    try {
-        await post(payload);
-        success = true;
+
+    let noteBtnHtml = '';
+    if (c.note && c.note.trim() !== '') {
+      noteBtnHtml = `<button class="btn btn-sm btn-warning text-dark py-0 px-2 fw-bold shadow-sm" style="font-size: 0.75rem;" onclick="openNoteModal('${c.id}')"><i class="bi bi-sticky-fill"></i> 備註</button>`;
+    } else {
+      noteBtnHtml = `<button class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size: 0.75rem;" onclick="openNoteModal('${c.id}')"><i class="bi bi-sticky"></i> 備註</button>`;
     }
-    catch (e) {
-        console.error(e);
-        alert('儲存失敗或未收到確認：' + e.message + '。請保留此視窗並再次按下儲存，以相同識別碼重試。');
+
+    let occupationHtml = c.occupation ? `<span class="me-3"><i class="bi bi-briefcase-fill me-1"></i> 職業：${c.occupation}</span>` : '';
+
+    let sourceHtml = '';
+    if (c.source && c.source.type) {
+      let referrerBtn = '';
+      if (c.source.type === '轉介紹' && c.source.referrerName) {
+        referrerBtn = `<button class="btn btn-sm btn-outline-primary py-0 px-1 ms-1 me-1" style="font-size: 0.75rem;" onclick="jumpToClientByName('${c.source.referrerName}')"><i class="bi bi-person-fill"></i> ${c.source.referrerName}</button>`;
+      }
+      sourceHtml = `
+        <div class="small text-secondary mb-1">
+          <i class="bi bi-person-lines-fill me-1"></i> 來源：${c.source.type} ${referrerBtn}${c.source.text || ''}
+        </div>
+      `;
     }
-    finally {
-        clientSaving = false;
-        btn.disabled = false;
-        btn.innerText = label;
-        controls.forEach(x => x.disabled = false);
-    }
-    if (success) {
-        pendingClientId = null;
-        pendingAddPayload = null;
-        clientModal.hide();
-        loadData();
-    }
+
+    html += `
+      <div class="card border-0 shadow-sm mb-3 rounded-4" id="client-card-${c.id}">
+        <div class="card-body p-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div class="d-flex align-items-center flex-wrap gap-1" style="flex-grow: 1; min-width: 0;">
+              <h5 class="fw-bold mb-0 text-dark d-flex align-items-center gap-1">
+                <span>${c.name || '未命名'}</span>
+                ${genderBadge}
+              </h5>
+              <span class="fs-6 fw-normal text-muted">${info.currentAge}歲</span>
+              ${noteBtnHtml}
+            </div>
+            <div class="d-flex align-items-center gap-1 ms-2" style="flex-shrink: 0;">
+              <button class="btn btn-sm btn-outline-secondary border-0 p-1" onclick="openModalForEdit('${c.id}')" title="編輯"><i class="bi bi-pencil-fill"></i></button>
+              <button class="btn btn-sm btn-outline-danger border-0 p-1" onclick="deleteClient('${c.id}')" title="刪除"><i class="bi bi-trash-fill"></i></button>
+            </div>
+          </div>
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+            <span class="badge bg-info text-dark bg-opacity-25 border border-info py-1 px-2" style="font-size: 0.75rem;">
+              <i class="bi bi-shield-plus"></i> 保險年齡${info.insuranceAge}歲 (再過${info.daysToInsuranceAgeInc}天+1)
+            </span>
+            <span class="badge bg-secondary bg-opacity-10 text-secondary border py-1 px-2" style="cursor: pointer; font-size: 0.75rem;" onclick="openInterviewModal('${c.id}')" title="點擊進入訪談紀錄">
+              <i class="bi bi-chat-left-text"></i> 訪談紀錄 (${clientInterviews.length})
+            </span>
+          </div>
+          ${sourceHtml}
+          <div class="small text-secondary mb-1">
+            <i class="bi bi-calendar-event me-1"></i> 生日：${c.birthday || ''} <span class="ms-3"><i class="bi bi-card-heading me-1"></i> 身分證：${c.idNumber || '未填寫'}</span>
+          </div>
+          <div class="small text-secondary mb-1">
+            ${occupationHtml}
+            <i class="bi bi-telephone-fill me-1"></i> 電話：<a href="tel:${phoneStr}" class="text-decoration-none">${phoneStr}</a>
+          </div>
+          <div class="small text-secondary mb-1">
+            <i class="bi bi-geo-alt-fill me-1"></i> 地址：${c.address || '未填寫'}
+          </div>
+          ${tagsHtml}
+          ${vehiclesHtml}
+        </div>
+      </div>
+    `;
+  });
+  container.innerHTML = html;
 }
-async function deleteClient(id) { if (!confirm('確定要刪除這位客戶的資料與所有相關訪談紀錄嗎？'))
-    return; try {
-    await post({ action: 'delete', id });
-    loadData();
+
+function openNoteModal(clientId) {
+  const client = allClients.find(c => c.id == clientId);
+  if (!client) return;
+
+  document.getElementById('current-note-client-id').value = clientId;
+  document.getElementById('note-modal-title').innerHTML = `<i class="bi bi-sticky"></i> ${client.name} 的備註`;
+  
+  const textarea = document.getElementById('client-note-content');
+  textarea.value = client.note || '';
+
+  noteModal.show();
 }
-catch (e) {
-    alert('刪除失敗：' + e.message);
-} }
-function openNoteModal(id) { if (!noteModal) {
-    alert('視窗尚未就緒，請重新整理頁面');
+
+function saveNote() {
+  const clientId = document.getElementById('current-note-client-id').value;
+  const client = allClients.find(c => c.id == clientId);
+  if (!client) return;
+
+  const noteContent = document.getElementById('client-note-content').value;
+
+  const saveBtn = document.getElementById('save-note-btn');
+  saveBtn.disabled = true;
+  saveBtn.innerText = '儲存中...';
+
+  const payload = {
+    action: 'update',
+    id: client.id,
+    name: client.name,
+    gender: client.gender,
+    birthday: client.birthday,
+    source: client.source || {},
+    idNumber: client.idNumber,
+    occupation: client.occupation,
+    phone: client.phone,
+    address: client.address,
+    vehicles: client.vehicles,
+    tags: client.tags || [],
+    note: noteContent
+  };
+
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+  .then(res => res.json())
+  .then(res => {
+    saveBtn.disabled = false;
+    saveBtn.innerText = '儲存備註';
+    if (res.status === 'success') {
+      noteModal.hide();
+      loadData();
+    } else {
+      alert('儲存失敗：' + res.message);
+    }
+  })
+  .catch(err => {
+    saveBtn.disabled = false;
+    saveBtn.innerText = '儲存備註';
+    console.error(err);
+    alert('發生錯誤，請檢查網路');
+  });
+}
+
+function addVehicleRow(type = '機車', plate = '', expiry = '') {
+  const container = document.getElementById('vehicle-rows-container');
+  const rowId = 'v-row-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+  
+  const div = document.createElement('div');
+  div.className = 'row g-2 align-items-center mb-2 vehicle-item-row bg-light p-2 rounded-3 border';
+  div.id = rowId;
+  
+  const expiryInputType = expiry ? 'date' : 'text';
+
+  div.innerHTML = `
+    <div class="col-3">
+      <select class="form-select form-select-sm vehicle-type">
+        <option value="機車" ${type === '機車' ? 'selected' : ''}>機車</option>
+        <option value="重機" ${type === '重機' ? 'selected' : ''}>重機</option>
+        <option value="汽車" ${type === '汽車' ? 'selected' : ''}>汽車</option>
+      </select>
+    </div>
+    <div class="col-4">
+      <input type="text" class="form-control form-control-sm vehicle-plate" placeholder="車牌號碼" value="${plate}">
+    </div>
+    <div class="col-4">
+      <input type="${expiryInputType}" class="form-control form-control-sm vehicle-expiry" placeholder="強制險到期日" value="${expiry}" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'">
+    </div>
+    <div class="col-1 text-end">
+      <button type="button" class="btn btn-sm text-danger p-0" onclick="document.getElementById('${rowId}').remove()"><i class="bi bi-trash-fill"></i></button>
+    </div>
+  `;
+  container.appendChild(div);
+}
+
+function openInterviewModal(clientId) {
+  const client = allClients.find(c => c.id == clientId);
+  if (!client) return;
+
+  document.getElementById('current-interview-client-id').value = clientId;
+  document.getElementById('interview-modal-title').innerHTML = `<i class="bi bi-journal-text"></i> ${client.name} 的訪談紀錄`;
+  
+  resetInterviewForm();
+  renderInterviewList(clientId);
+  interviewModal.show();
+}
+
+function resetInterviewForm() {
+  document.getElementById('current-interview-id').value = '';
+  document.getElementById('interview-form-title').innerHTML = `<i class="bi bi-plus-circle"></i> 新增本次訪談紀錄`;
+  document.getElementById('save-interview-btn').innerText = '儲存訪談紀錄';
+  document.getElementById('cancel-interview-edit-btn').style.display = 'none';
+
+  document.getElementById('interview-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('interview-location').value = '';
+  document.getElementById('interview-content').value = '';
+}
+
+function editInterview(interviewId) {
+  const item = allInterviews.find(i => i.id == interviewId);
+  if (!item) return;
+
+  document.getElementById('current-interview-id').value = item.id;
+  document.getElementById('interview-form-title').innerHTML = `<i class="bi bi-pencil-square"></i> 編輯訪談紀錄`;
+  document.getElementById('save-interview-btn').innerText = '更新訪談紀錄';
+  document.getElementById('cancel-interview-edit-btn').style.display = 'inline-block';
+
+  document.getElementById('interview-date').value = item.date || '';
+  document.getElementById('interview-location').value = item.location || '';
+  document.getElementById('interview-content').value = item.content || '';
+
+  document.querySelector('#interview-modal .modal-body').scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderInterviewList(clientId) {
+  const container = document.getElementById('interview-list');
+  const clientInterviews = allInterviews.filter(i => i.clientId == clientId);
+
+  if (clientInterviews.length === 0) {
+    container.innerHTML = '<div class="text-center text-muted py-3 small">目前尚無訪談紀錄，請利用上方表單新增。</div>';
     return;
-} let c = allClients.find(c => c.id == id); if (!c)
-    return; set('current-note-client-id', id); $('note-modal-title').innerHTML = icon('sticky') + ' ' + esc(c.name) + ' 的備註'; set('client-note-content', c.note); noteModal.show(); }
-async function saveNote() { let c = allClients.find(c => c.id == val('current-note-client-id')); if (!c)
-    return; let b = $('save-note-btn'); if (b.disabled)
-    return; b.disabled = true; b.innerText = '儲存中...'; try {
-    await post({ ...c, action: 'update', note: val('client-note-content') });
-    noteModal.hide();
-    loadData();
+  }
+
+  clientInterviews.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  let html = '';
+  clientInterviews.forEach(item => {
+    html += `
+      <div class="card border mb-3 bg-white shadow-sm">
+        <div class="card-body p-3">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+              <span class="badge bg-primary bg-opacity-10 text-primary border border-primary me-2">
+                <i class="bi bi-calendar3"></i> ${item.date || '未填寫日期'}
+              </span>
+              <span class="badge bg-success bg-opacity-10 text-success border border-success">
+                <i class="bi bi-geo-alt"></i> ${item.location || '未填寫地點'}
+              </span>
+            </div>
+            <div>
+              <button class="btn btn-sm btn-outline-secondary border-0 me-1" onclick="editInterview('${item.id}')" title="編輯訪談紀錄"><i class="bi bi-pencil-fill"></i></button>
+              <button class="btn btn-sm btn-outline-danger border-0" onclick="deleteInterview('${item.id}', '${clientId}')" title="刪除訪談紀錄"><i class="bi bi-trash-fill"></i></button>
+            </div>
+          </div>
+          <div class="text-secondary mb-2" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.6;">${item.content || ''}</div>
+        </div>
+      </div>
+    `;
+  });
+  container.innerHTML = html;
 }
-catch (e) {
-    alert('儲存失敗：' + e.message);
-}
-finally {
-    b.disabled = false;
-    b.innerText = '儲存備註';
-} }
-function openInterviewModal(id) { if (!interviewModal) {
-    alert('視窗尚未就緒，請重新整理頁面');
-    return;
-} let c = allClients.find(c => c.id == id); if (!c)
-    return; set('current-interview-client-id', id); $('interview-modal-title').innerHTML = icon('journal-text') + ' ' + esc(c.name) + ' 的訪談紀錄'; resetInterviewForm(); renderInterviewList(id); interviewModal.show(); }
-function resetInterviewForm() { set('current-interview-id', ''); $('interview-form-title').innerHTML = icon('plus-circle') + ' 新增本次訪談紀錄'; $('save-interview-btn').innerText = '儲存訪談紀錄'; $('cancel-interview-edit-btn').style.display = 'none'; set('interview-date', new Date().toISOString().split('T')[0]); set('interview-location', ''); set('interview-content', ''); }
-function editInterview(id) { let x = allInterviews.find(x => x.id == id); if (!x)
-    return; set('current-interview-id', id); $('interview-form-title').innerHTML = icon('pencil-square') + ' 編輯訪談紀錄'; $('save-interview-btn').innerText = '更新訪談紀錄'; $('cancel-interview-edit-btn').style.display = 'inline-block'; set('interview-date', x.date); set('interview-location', x.location); set('interview-content', x.content); document.querySelector('#interview-modal .modal-body').scrollTo({ top: 0, behavior: 'smooth' }); }
-function renderInterviewList(id) { let list = allInterviews.filter(x => x.clientId == id).sort((a, b) => new Date(b.date) - new Date(a.date)); $('interview-list').innerHTML = list.length ? list.map(x => `<div class="card border mb-3 bg-white shadow-sm"><div class="card-body p-3"><div class="d-flex justify-content-between align-items-center mb-2"><div><span class="badge bg-primary bg-opacity-10 text-primary border border-primary me-2">${icon('calendar3')} ${esc(x.date || '未填寫日期')}</span><span class="badge bg-success bg-opacity-10 text-success border border-success">${icon('geo-alt')} ${esc(x.location || '未填寫地點')}</span></div><div><button class="btn btn-sm btn-outline-secondary border-0 me-1" onclick="editInterview(${arg(x.id)})">${icon('pencil-fill')}</button><button class="btn btn-sm btn-outline-danger border-0" onclick="deleteInterview(${arg(x.id)},${arg(id)})">${icon('trash-fill')}</button></div></div><div class="text-secondary mb-2" style="white-space:pre-wrap;font-size:.95rem;line-height:1.6">${esc(x.content)}</div></div></div>`).join('') : '<div class="text-center text-muted py-3 small">目前尚無訪談紀錄，請利用上方表單新增。</div>'; }
-async function saveInterview() { let clientId = val('current-interview-client-id'), id = val('current-interview-id'), date = val('interview-date'), location = val('interview-location').trim(), content = val('interview-content').trim(); if (!date || !content) {
+
+function saveInterview() {
+  const clientId = document.getElementById('current-interview-client-id').value;
+  const interviewId = document.getElementById('current-interview-id').value;
+  const date = document.getElementById('interview-date').value;
+  const location = document.getElementById('interview-location').value.trim();
+  const content = document.getElementById('interview-content').value.trim();
+
+  if (!date || !content) {
     alert('請填寫訪談日期與訪談內容！');
     return;
-} let b = $('save-interview-btn'); if (b.disabled)
-    return; b.disabled = true; b.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> 處理中...'; try {
-    await post({ action: id ? 'updateInterview' : 'addInterview', id: id || undefined, clientId, date, location, content });
-    resetInterviewForm();
-    loadData(clientId);
+  }
+
+  const saveBtn = document.getElementById('save-interview-btn');
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> 處理中...';
+
+  const actionType = interviewId ? 'updateInterview' : 'addInterview';
+  const payload = {
+    action: actionType,
+    id: interviewId || undefined,
+    clientId: clientId,
+    date: date,
+    location: location,
+    content: content
+  };
+
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+  .then(res => res.json())
+  .then(res => {
+    saveBtn.disabled = false;
+    saveBtn.innerText = interviewId ? '更新訪談紀錄' : '儲存訪談紀錄';
+    if (res.status === 'success') {
+      loadDataForModal(clientId);
+      resetInterviewForm();
+    } else {
+      alert('儲存失敗：' + (res.message || '未知錯誤'));
+    }
+  })
+  .catch(err => {
+    saveBtn.disabled = false;
+    saveBtn.innerText = interviewId ? '更新訪談紀錄' : '儲存訪談紀錄';
+    console.error(err);
+    alert('發生錯誤，請檢查網路');
+  });
 }
-catch (e) {
-    alert('儲存失敗：' + e.message);
+
+function loadDataForModal(clientId) {
+  fetch(API_URL)
+    .then(res => res.json())
+    .then(data => {
+      allClients = data.clients || [];
+      allInterviews = data.interviews || [];
+      checkTodayBirthdays();
+      filterClients();
+      renderInterviewList(clientId);
+    });
 }
-finally {
-    b.disabled = false;
-    b.innerText = val('current-interview-id') ? '更新訪談紀錄' : '儲存訪談紀錄';
-} }
-async function deleteInterview(id, clientId) { if (!confirm('確定要刪除這則訪談紀錄嗎？'))
-    return; try {
-    await post({ action: 'deleteInterview', id });
-    loadData(clientId);
+
+function deleteInterview(id, clientId) {
+  if (!confirm('確定要刪除這則訪談紀錄嗎？')) return;
+
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'deleteInterview', id: id })
+  })
+  .then(res => res.json())
+  .then(res => {
+    if (res.status === 'success') {
+      loadDataForModal(clientId);
+    } else {
+      alert('刪除失敗');
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert('發生錯誤');
+  });
 }
-catch (e) {
-    alert('刪除失敗：' + e.message);
-} }
+
+function openModalForAdd() {
+  editingId = null;
+  document.getElementById('modal-title').innerText = '新增名單';
+  document.getElementById('save-client-btn').innerText = '新增';
+  document.getElementById('client-id').value = '';
+  document.getElementById('client-name').value = '';
+  document.getElementById('client-gender').value = '';
+  document.getElementById('client-birthday').value = '';
+  document.getElementById('client-source-type').value = '緣故';
+  onSourceTypeChange();
+  document.getElementById('client-source-referrer').value = '';
+  document.getElementById('client-source-text').value = '';
+  document.getElementById('client-idNumber').value = '';
+  document.getElementById('client-occupation').value = '';
+  document.getElementById('client-phone').value = '';
+  document.getElementById('client-address').value = '';
+  
+  document.querySelectorAll('.client-tag-checkbox').forEach(cb => cb.checked = false);
+
+  document.getElementById('vehicle-rows-container').innerHTML = '';
+  clientModal.show();
+}
+
+function openModalForEdit(id) {
+  const client = allClients.find(c => c.id == id);
+  if (!client) return;
+  
+  editingId = id;
+  document.getElementById('modal-title').innerText = '編輯名單資料';
+  document.getElementById('save-client-btn').innerText = '儲存';
+  document.getElementById('client-id').value = client.id;
+  document.getElementById('client-name').value = client.name || '';
+  document.getElementById('client-gender').value = client.gender || '';
+  document.getElementById('client-birthday').value = client.birthday || '';
+  
+  document.getElementById('client-source-type').value = client.source && client.source.type ? client.source.type : '緣故';
+  onSourceTypeChange();
+  if (client.source && client.source.type === '轉介紹') {
+    document.getElementById('client-source-referrer').value = client.source.referrerName || '';
+  } else {
+    document.getElementById('client-source-referrer').value = '';
+  }
+  document.getElementById('client-source-text').value = client.source && client.source.text ? client.source.text : '';
+
+  document.getElementById('client-idNumber').value = client.idNumber || '';
+  document.getElementById('client-occupation').value = client.occupation || '';
+  document.getElementById('client-phone').value = formatPhone(client.phone);
+  document.getElementById('client-address').value = client.address || '';
+  
+  document.querySelectorAll('.client-tag-checkbox').forEach(cb => {
+    cb.checked = client.tags && client.tags.includes(cb.value);
+  });
+  
+  const vehicleContainer = document.getElementById('vehicle-rows-container');
+  vehicleContainer.innerHTML = '';
+  if (client.vehicles && client.vehicles.length > 0) {
+    client.vehicles.forEach(v => {
+      addVehicleRow(v.type, v.plate, v.expiry);
+    });
+  }
+
+  clientModal.show();
+}
+
+function saveClient() {
+  const name = document.getElementById('client-name').value.trim();
+  const gender = document.getElementById('client-gender').value;
+  const birthday = document.getElementById('client-birthday').value;
+  
+  const sourceType = document.getElementById('client-source-type').value;
+  const sourceReferrer = document.getElementById('client-source-referrer').value.trim();
+  const sourceText = document.getElementById('client-source-text').value.trim();
+  const source = {
+    type: sourceType,
+    referrerName: sourceType === '轉介紹' ? sourceReferrer : '',
+    text: sourceText
+  };
+
+  const idNumber = document.getElementById('client-idNumber').value.trim();
+  const occupation = document.getElementById('client-occupation').value.trim();
+  const phone = document.getElementById('client-phone').value.trim();
+  const address = document.getElementById('client-address').value.trim();
+
+  const tags = [];
+  document.querySelectorAll('.client-tag-checkbox:checked').forEach(cb => {
+    tags.push(cb.value);
+  });
+
+  const vehicles = [];
+  const vehicleRows = document.querySelectorAll('.vehicle-item-row');
+  vehicleRows.forEach(row => {
+    const type = row.querySelector('.vehicle-type').value;
+    const plate = row.querySelector('.vehicle-plate').value.trim();
+    const expiry = row.querySelector('.vehicle-expiry').value;
+    vehicles.push({ type, plate, expiry });
+  });
+
+  if (!name || !birthday) {
+    alert('請填寫姓名與生日！');
+    return;
+  }
+
+  const existingClient = allClients.find(c => c.id === editingId);
+  const currentNote = existingClient ? existingClient.note || '' : '';
+
+  const action = editingId ? 'update' : 'add';
+  const payload = {
+    action: action,
+    id: editingId,
+    name: name,
+    gender: gender,
+    birthday: birthday,
+    source: source,
+    idNumber: idNumber,
+    occupation: occupation,
+    phone: phone,
+    address: address,
+    vehicles: vehicles,
+    tags: tags,
+    note: currentNote
+  };
+
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  })
+  .then(res => res.json())
+  .then(res => {
+    if (res.status === 'success') {
+      clientModal.hide();
+      loadData();
+    } else {
+      alert('儲存失敗：' + res.message);
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert('發生錯誤，請檢查網路或連線');
+  });
+}
+
+function deleteClient(id) {
+  if (!confirm('確定要刪除這位客戶的資料與所有相關訪談紀錄嗎？')) return;
+
+  fetch(API_URL, {
+    method: 'POST',
+    body: JSON.stringify({ action: 'delete', id: id })
+  })
+  .then(res => res.json())
+  .then(res => {
+    if (res.status === 'success') {
+      loadData();
+    } else {
+      alert('刪除失敗');
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert('刪除發生錯誤');
+  });
+}
 </script>
 </body>
 </html>
