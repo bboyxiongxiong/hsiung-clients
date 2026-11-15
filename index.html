@@ -22,10 +22,12 @@ function formatPhone(phone){let p=String(phone||'').trim();return p.length===9&&
 function newClientId(){return 'C_'+crypto.randomUUID();}
 async function post(payload){const r=await fetch(API_URL,{method:'POST',body:JSON.stringify(payload)});if(!r.ok)throw Error('HTTP '+r.status);const d=await r.json();if(d.status!=='success')throw Error(d.message||'未知錯誤');return d;}
 document.addEventListener('DOMContentLoaded',()=>{
- for(let m=1;m<=12;m++){let v=String(m).padStart(2,'0');$('birthday-options').add(new Option(m+'月壽星',v));$('insurance-options').add(new Option(m+'月','ins-'+v));}
+ try {
+ for(let m=1;m<=12;m++){let v=String(m).padStart(2,'0');$('birthday-options').appendChild(new Option(m+'月壽星',v));$('insurance-options').appendChild(new Option(m+'月','ins-'+v));}
  ['人壽','車險','旅平卡','產險'].forEach((t,i)=>{$('tag-options').insertAdjacentHTML('beforeend',`<div class="form-check"><input class="form-check-input client-tag-checkbox" type="checkbox" value="${t}" id="tag-${i}"><label class="form-check-label" for="tag-${i}">${t}</label></div>`);});
  clientModal=new bootstrap.Modal($('client-modal'));interviewModal=new bootstrap.Modal($('interview-modal'));noteModal=new bootstrap.Modal($('note-modal'));
  $('client-modal').addEventListener('hide.bs.modal',e=>{if(clientSaving)e.preventDefault();});loadData();
+ } catch(e) { console.error(e); $('client-list').textContent='系統初始化失敗：'+e.message; }
 });
 function onSourceTypeChange(){let yes=val('client-source-type')==='轉介紹';$('source-referrer-col').style.display=yes?'block':'none';$('source-text-col').className=yes?'col-4':'col-8';if(!yes)set('client-source-referrer','');}
 function onReferrerInput(keyword){let d=$('referrer-dropdown'),k=keyword.trim().toLowerCase();let matches=k?allClients.filter(c=>String(c.name||'').toLowerCase().includes(k)):[];d.innerHTML=matches.map(c=>`<button type="button" class="dropdown-item small py-1" onclick="selectReferrer(${arg(c.name)})">${esc(c.name)}</button>`).join('');d.style.display=matches.length?'block':'none';}
