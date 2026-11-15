@@ -12,7 +12,7 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
 <div>
 <h3 class="fw-bold mb-0 text-dark">客戶紀錄</h3>
-<small class="text-muted">名單管理系統 · V1.1</small>
+<small class="text-muted">名單管理系統 · V1.1.1</small>
 </div>
 <div class="d-flex align-items-center gap-2">
 <span class="badge bg-primary px-3 py-2 fs-6" id="client-count">0 名單</span>
@@ -325,10 +325,8 @@ document.addEventListener('click', e => { let d = $('referrer-dropdown'); if (d 
 async function loadData(clientId) {
     const el = $('client-list');
     el.textContent = '正在連線 Google Apps Script…';
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 25000);
     try {
-        const r = await fetch(API_URL, { cache: 'no-store', signal: controller.signal });
+        const r = await fetch(API_URL);
         if (!r.ok)
             throw Error('HTTP ' + r.status);
         const raw = await r.text();
@@ -350,10 +348,7 @@ async function loadData(clientId) {
     }
     catch (e) {
         console.error(e);
-        el.textContent = '載入失敗：' + (e.name === 'AbortError' ? '連線逾時（25 秒）' : e.message);
-    }
-    finally {
-        clearTimeout(timeout);
+        el.textContent = '載入失敗：' + e.message;
     }
 }
 function checkTodayBirthdays() { let now = new Date(), m = String(now.getMonth() + 1).padStart(2, '0'), d = String(now.getDate()).padStart(2, '0'); let list = allClients.filter(c => String(c.birthday || '').slice(5) === m + '-' + d); $('today-birthday-banner').style.display = list.length ? 'block' : 'none'; $('today-birthday-content').innerHTML = `<div><strong>本日壽星 (${now.getMonth() + 1}月${now.getDate()}日)：</strong> ${list.map(c => `<button class="btn btn-sm btn-dark py-0 px-2 me-1 fw-bold" onclick="jumpToClientByName(${arg(c.name)})">${icon('gift-fill')} ${esc(c.name)}</button>`).join('')} 記得送上祝賀！</div>`; }
