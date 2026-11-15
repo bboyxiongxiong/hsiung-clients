@@ -332,7 +332,6 @@
 
             let html = '';
             filtered.forEach(c => {
-                // 計算保險年齡
                 let insAgeText = '未填生日';
                 if (c.birthday) {
                     const bDate = new Date(c.birthday);
@@ -350,7 +349,6 @@
                     insAgeText = `保險年齡 ${insAge}歲 (再過${diffDays}天+1)`;
                 }
 
-                // 來源標籤
                 let sourceBadge = '';
                 if (c.source) {
                     let text = c.source.type || '';
@@ -359,14 +357,12 @@
                     sourceBadge = `<span class="badge bg-secondary badge-source me-1">來源：${text}</span>`;
                 }
 
-                // 狀態顏色
                 let statusColor = 'secondary';
                 if (c.status === '已成交') statusColor = 'success';
                 else if (c.status === '追蹤中') statusColor = 'primary';
                 else if (c.status === '考慮中') statusColor = 'warning text-dark';
                 else if (c.status === '未接/未聯繫') statusColor = 'danger';
 
-                // 車輛標籤
                 let vehHtml = '';
                 if (Array.isArray(c.vehicles)) {
                     c.vehicles.forEach(v => {
@@ -374,7 +370,6 @@
                     });
                 }
 
-                // 訪談次數
                 const intCount = allInterviews.filter(i => String(i.clientId) === String(c.id)).length;
 
                 html += `
@@ -590,9 +585,8 @@
 
             document.getElementById('int-client-id').value = c.id;
             document.getElementById('int-client-name').innerText = c.name;
-            document.getElementById('int-form').reset();
+            document.getElementById('interview-form').reset();
 
-            // 預設帶入目前時間
             const now = new Date();
             const tzOffset = now.getTimezoneOffset() * 60000;
             const localISOTime = (new Date(now - tzOffset)).toISOString().slice(0, 16);
@@ -614,7 +608,6 @@
 
             let html = '';
             historyList.forEach(item => {
-                html => ''
                 html += `
                     <div class="border-bottom pb-2 mb-2 position-relative">
                         <div class="d-flex justify-content-between text-muted" style="font-size: 0.75rem;">
@@ -655,12 +648,10 @@
             .then(data => {
                 if (data.status === 'success') {
                     showToast('紀錄已新增');
-                    // 本地暫存新增
                     allInterviews.push(interview);
                     document.getElementById('int-content').value = '';
                     document.getElementById('int-nextdate').value = '';
                     renderInterviewHistory(clientId);
-                    // 同步背景更新主畫面
                     fetch(API_URL).then(res => res.json()).then(d => { if(d.status==='success') allInterviews = d.interviews || []; });
                 } else {
                     throw new Error(data.message);
