@@ -147,7 +147,9 @@
 
         <div class="mb-3">
           <label class="form-label small fw-bold">身分證字號</label>
-          <input type="text" class="form-control" id="client-idNumber" placeholder="">
+          <input type="text" class="form-control" id="client-idNumber" placeholder="" autocapitalize="characters" spellcheck="false" oninput="clearIdNumberError()">
+          <!-- V1.2：身分證字號錯誤提示 -->
+          <div class="invalid-feedback" id="id-number-error"></div>
         </div>
         <div class="mb-3">
           <label class="form-label small fw-bold">職業</label>
@@ -290,6 +292,112 @@ document.addEventListener("DOMContentLoaded", () => {
 
   loadData();
 });
+
+// ========================================
+// V1.2：身分證字號標準化
+// ========================================
+
+function normalizeIdNumber(value) {
+  if (value === null || value === undefined) {
+    return '';
+  }
+
+  return String(value).trim().toUpperCase();
+}
+
+// ========================================
+// V1.2：台灣身分證字號格式及檢查碼驗證
+// ========================================
+
+function isValidTaiwanIdNumber(value) {
+  const idNumber = normalizeIdNumber(value);
+
+  // 身分證字號維持非必填
+  if (idNumber === '') {
+    return true;
+  }
+
+  // 第一碼英文，第二碼 1 或 2，後面八碼數字
+  if (!/^[A-Z][12][0-9]{8}$/.test(idNumber)) {
+    return false;
+  }
+
+  const letterCodes = {
+    A: 10,
+    B: 11,
+    C: 12,
+    D: 13,
+    E: 14,
+    F: 15,
+    G: 16,
+    H: 17,
+    I: 34,
+    J: 18,
+    K: 19,
+    L: 20,
+    M: 21,
+    N: 22,
+    O: 35,
+    P: 23,
+    Q: 24,
+    R: 25,
+    S: 26,
+    T: 27,
+    U: 28,
+    V: 29,
+    W: 32,
+    X: 30,
+    Y: 31,
+    Z: 33
+  };
+
+  const letterCode = letterCodes[idNumber.charAt(0)];
+
+  let sum =
+    Math.floor(letterCode / 10) +
+    (letterCode % 10) * 9;
+
+  // 第二碼至第九碼依序乘上 8 至 1
+  for (let i = 1; i <= 8; i++) {
+    sum += Number(idNumber.charAt(i)) * (9 - i);
+  }
+
+  // 加上最後一碼檢查碼
+  sum += Number(idNumber.charAt(9));
+
+  return sum % 10 === 0;
+}
+
+// ========================================
+// V1.2：顯示身分證字號錯誤
+// ========================================
+
+function showIdNumberError(message) {
+  const input = document.getElementById('client-idNumber');
+  const error = document.getElementById('id-number-error');
+
+  input.classList.add('is-invalid');
+  error.textContent = message;
+
+  input.scrollIntoView({
+    behavior: 'smooth',
+    block: 'center'
+  });
+
+  input.focus();
+}
+
+// ========================================
+// V1.2：清除身分證字號錯誤提示
+// ========================================
+
+function clearIdNumberError() {
+  const input = document.getElementById('client-idNumber');
+  const error = document.getElementById('id-number-error');
+
+  input.classList.remove('is-invalid');
+  error.textContent = '';
+}
 
 // 自動補回開頭 0
 function formatPhone(phone) {
@@ -948,6 +1056,10 @@ function openModalForAdd() {
 
   pendingClientId = null;
   editingId = null;
+
+  // V1.2：清除上次身分證字號錯誤提示
+  clearIdNumberError();
+
   document.getElementById('modal-title').innerText = '新增名單';
   document.getElementById('save-client-btn').innerText = '新增';
   document.getElementById('client-id').value = '';
@@ -982,6 +1094,10 @@ function openModalForEdit(id) {
   if (!client) return;
 
   editingId = id;
+
+  // V1.2：清除上次身分證字號錯誤提示
+  clearIdNumberError();
+
   document.getElementById('modal-title').innerText = '編輯名單資料';
   document.getElementById('save-client-btn').innerText = '儲存';
   document.getElementById('client-id').value = client.id;
@@ -1022,6 +1138,9 @@ function saveClient() {
   // V1.1：防止連續點擊造成重複請求
   if (clientSaving) return;
 
+  // V1.2：清除上次錯誤提示
+  clearIdNumberError();
+
   const name = document.getElementById('client-name').value.trim();
   const gender = document.getElementById('client-gender').value;
   const birthday = document.getElementById('client-birthday').value;
@@ -1035,7 +1154,13 @@ function saveClient() {
     text: sourceText
   };
 
-  const idNumber = document.getElementById('client-idNumber').value.trim();
+  // V1.2：自動去除前後空白並轉成大寫
+  const idNumber = normalizeIdNumber(
+    document.getElementById('client-idNumber').value
+  );
+
+  document.getElementById('client-idNumber').value = idNumber;
+
   const occupation = document.getElementById('client-occupation').value.trim();
   const phone = document.getElementById('client-phone').value.trim();
   const address = document.getElementById('client-address').value.trim();
@@ -1063,6 +1188,66 @@ function saveClient() {
   const currentNote = existingClient ? existingClient.note || '' : '';
 
   const action = editingId ? 'update' : 'add';
+
+  // ========================================
+  // V1.2：身分證字號前端驗證
+  // ========================================
+
+  const oldIdNumber = existingClient
+    ? normalizeIdNumber(existingClient.idNumber)
+    : '';
+
+  const shouldValidateId =
+    action === 'add' ||
+    idNumber !== oldIdNumber;
+
+  // 尚未確認的新增請求必須沿用原始資料重試
+  // 避免前端重複檢查阻止 V1.1 的重試機制
+  if (
+    !pendingAddPayload &&
+    shouldValidateId &&
+    idNumber !== ''
+  ) {
+
+    // 檢查身分證字號格式
+    if (!/^[A-Z][12][0-9]{8}$/.test(idNumber)) {
+      showIdNumberError(
+        '身分證字號格式錯誤，請輸入一個英文字母及九個數字，第二碼須為 1 或 2。'
+      );
+      return;
+    }
+
+    // 檢查身分證字號檢查碼
+    if (!isValidTaiwanIdNumber(idNumber)) {
+      showIdNumberError(
+        '身分證字號檢查碼錯誤，請重新確認。'
+      );
+      return;
+    }
+
+    // 檢查其他客戶是否使用相同身分證字號
+    const duplicateClient = allClients.find(c => {
+      if (String(c.id) === String(editingId)) {
+        return false;
+      }
+
+      const existingIdNumber = normalizeIdNumber(c.idNumber);
+
+      return (
+        existingIdNumber !== '' &&
+        existingIdNumber === idNumber
+      );
+    });
+
+    if (duplicateClient) {
+      showIdNumberError(
+        '此身分證字號已登錄於「' +
+        (duplicateClient.name || '未命名客戶') +
+        '」的客戶資料，請勿重複建檔。'
+      );
+      return;
+    }
+  }
 
   // V1.1：同一次新增及重試沿用相同客戶 ID
   if (action === 'add' && !pendingClientId) {
@@ -1136,8 +1321,29 @@ function saveClient() {
 
       clientModal.hide();
       loadData();
+
     } else {
-      alert('儲存失敗：' + res.message);
+
+      // V1.2：處理後端身分證字號驗證錯誤
+      if (
+        res.code === 'INVALID_ID_NUMBER' ||
+        res.code === 'DUPLICATE_ID_NUMBER'
+      ) {
+
+        // 後端已確認拒絕此次寫入
+        // 解除待重試狀態，允許使用者修正資料
+        if (action === 'add') {
+          pendingClientId = null;
+          pendingAddPayload = null;
+        }
+
+        showIdNumberError(
+          res.message || '身分證字號驗證失敗，請重新確認。'
+        );
+
+      } else {
+        alert('儲存失敗：' + res.message);
+      }
     }
   })
   .catch(err => {
