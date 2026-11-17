@@ -81,6 +81,20 @@
           <option value="ins-11">11月</option>
           <option value="ins-12">12月</option>
         </optgroup>
+        <optgroup label="強制險到期月份">
+          <option value="ins-01">1月</option>
+          <option value="ins-02">2月</option>
+          <option value="ins-03">3月</option>
+          <option value="ins-04">4月</option>
+          <option value="ins-05">5月</option>
+          <option value="ins-06">6月</option>
+          <option value="ins-07">7月</option>
+          <option value="ins-08">8月</option>
+          <option value="ins-09">9月</option>
+          <option value="ins-10">10月</option>
+          <option value="ins-11">11月</option>
+          <option value="ins-12">12月</option>
+        </optgroup>
       </select>
     </div>
   </div>
@@ -123,9 +137,9 @@
           <div class="col-6">
             <label class="form-label small fw-bold">生日 *</label>
 
-            <!-- V1.4：自訂民國＋西元生日選擇器 -->
+            <!-- V1.4.2：民國＋西元生日選擇器，最高 99 足歲 -->
             <div class="d-flex gap-1">
-              <select class="form-select form-select-sm" id="birthday-year" aria-label="生日年份" style="min-width: 0; flex: 1.8;" onchange="updateBirthdayDays()">
+              <select class="form-select form-select-sm" id="birthday-year" aria-label="生日年份" style="min-width: 0; flex: 1.8;" onchange="updateBirthdayMonths()">
                 <option value="">年</option>
               </select>
               <select class="form-select form-select-sm" id="birthday-month" aria-label="生日月份" style="min-width: 0; flex: 1;" onchange="updateBirthdayDays()">
@@ -136,7 +150,7 @@
               </select>
             </div>
 
-            <!-- V1.4：保留原生日欄位作為 YYYY-MM-DD 資料接口 -->
+            <!-- 保留原生日欄位作為 YYYY-MM-DD 資料接口 -->
             <input type="hidden" id="client-birthday">
           </div>
         </div>
@@ -164,7 +178,6 @@
         <div class="mb-3">
           <label class="form-label small fw-bold">身分證字號</label>
           <input type="text" class="form-control" id="client-idNumber" placeholder="" autocapitalize="characters" spellcheck="false" oninput="clearIdNumberError()">
-          <!-- V1.2：身分證字號錯誤提示 -->
           <div class="invalid-feedback" id="id-number-error"></div>
         </div>
         <div class="mb-3">
@@ -296,6 +309,9 @@ let clientSaving = false;
 let pendingClientId = null;
 let pendingAddPayload = null;
 
+// V1.4.2：編輯既有客戶時，保留原始生日
+let originalEditingBirthday = '';
+
 document.addEventListener("DOMContentLoaded", () => {
   clientModal = new bootstrap.Modal(document.getElementById('client-modal'));
   interviewModal = new bootstrap.Modal(document.getElementById('interview-modal'));
@@ -306,7 +322,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (clientSaving) e.preventDefault();
   });
 
-  // V1.4：初始化生日年份及月份選項
+  // V1.4.2：初始化生日年份及月份選項
   initializeBirthdayPicker();
 
   loadData();
@@ -331,7 +347,73 @@ function formatBirthdayWithRoc(birthdayStr) {
 }
 
 // ========================================
-// V1.4：初始化自訂生日選擇器
+// V1.4.2：取得生日允許的最早日期
+// 已滿 100 歲不允許新增
+// ========================================
+
+function getMinimumBirthdayDate() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // 先回推 100 年，再加一天
+  // 例如 2026-11-18 -> 1926-11-19
+  const minimumDate = new Date(
+    today.getFullYear() - 100,
+    today.getMonth(),
+    today.getDate()
+  );
+
+  minimumDate.setDate(minimumDate.getDate() + 1);
+
+  return minimumDate;
+}
+
+// ========================================
+// V1.4.2：確認生日是否符合 99 足歲限制
+// ========================================
+
+function isBirthdayWithinAgeLimit(birthdayStr) {
+  if (!birthdayStr) return false;
+
+  const parts = String(birthdayStr).split('-');
+  if (parts.length !== 3) return false;
+
+  const year = Number(parts[0]);
+  const month = Number(parts[1]);
+  const day = Number(parts[2]);
+
+  if (
+    !Number.isInteger(year) ||
+    !Number.isInteger(month) ||
+    !Number.isInteger(day) ||
+    year < 1912 ||
+    month < 1 ||
+    month > 12 ||
+    day < 1 ||
+    day > 31
+  ) {
+    return false;
+  }
+
+  const birthday = new Date(year, month - 1, day);
+
+  if (
+    birthday.getFullYear() !== year ||
+    birthday.getMonth() !== month - 1 ||
+    birthday.getDate() !== day
+  ) {
+    return false;
+  }
+
+  const minimumDate = getMinimumBirthdayDate();
+
+  return birthday >= minimumDate;
+}
+
+// ========================================
+// V1.4.2：初始化自訂生日選擇器
+// 年份依今天自動更新
+// 同時保留民國元年 1912 年的下限
 // ========================================
 
 function initializeBirthdayPicker() {
@@ -342,28 +424,91 @@ function initializeBirthdayPicker() {
   monthSelect.innerHTML = '<option value="">月</option>';
 
   const currentYear = new Date().getFullYear();
+  const minimumYear = Math.max(
+    1912,
+    getMinimumBirthdayDate().getFullYear()
+  );
 
-  // 從今年往前 130 年，並預留未來一年
-  // 避免既有客戶生日超出可選年份範圍
-  for (let year = currentYear + 1; year >= currentYear - 130; year--) {
+  // 預留未來一年，維持 V1.4 原本行為
+  for (let year = currentYear + 1; year >= minimumYear; year--) {
     const option = document.createElement('option');
     option.value = String(year);
     option.textContent = '(' + (year - 1911) + ')' + year + '年';
     yearSelect.appendChild(option);
   }
 
+  updateBirthdayMonths();
+}
+
+// ========================================
+// V1.4.2：依年份更新月份選項
+// 排除整個月份都已超過 99 歲的情況
+// ========================================
+
+function updateBirthdayMonths() {
+  const year = document.getElementById('birthday-year').value;
+  const monthSelect = document.getElementById('birthday-month');
+  const previousMonth = monthSelect.value;
+  const minimumDate = getMinimumBirthdayDate();
+
+  monthSelect.innerHTML = '<option value="">月</option>';
+
+  if (!year) {
+    updateBirthdayDays();
+    return;
+  }
+
+  const selectedYear = Number(year);
+
   for (let month = 1; month <= 12; month++) {
+    const lastDay = new Date(
+      selectedYear,
+      month,
+      0
+    ).getDate();
+
+    const monthEndDate = new Date(
+      selectedYear,
+      month - 1,
+      lastDay
+    );
+
+    // 既有客戶原始生日所在月份，允許保留
+    const originalParts = originalEditingBirthday.split('-');
+    const isOriginalMonth =
+      editingId !== null &&
+      originalParts.length === 3 &&
+      Number(originalParts[0]) === selectedYear &&
+      Number(originalParts[1]) === month;
+
+    if (
+      monthEndDate < minimumDate &&
+      !isOriginalMonth
+    ) {
+      continue;
+    }
+
     const option = document.createElement('option');
     option.value = String(month).padStart(2, '0');
     option.textContent = month + '月';
     monthSelect.appendChild(option);
   }
 
+  if (
+    previousMonth &&
+    Array.from(monthSelect.options).some(
+      option => option.value === previousMonth
+    )
+  ) {
+    monthSelect.value = previousMonth;
+  }
+
   updateBirthdayDays();
 }
 
 // ========================================
-// V1.4：依年份及月份更新可選日期
+// V1.4.2：依年份及月份更新日期
+// 精確限制已滿 100 歲的生日
 // ========================================
 
 function updateBirthdayDays() {
@@ -379,21 +524,45 @@ function updateBirthdayDays() {
     return;
   }
 
+  const selectedYear = Number(year);
+  const selectedMonth = Number(month);
+
   const lastDay = new Date(
-    Number(year),
-    Number(month),
+    selectedYear,
+    selectedMonth,
     0
   ).getDate();
 
   for (let day = 1; day <= lastDay; day++) {
+    const birthdayStr =
+      year + '-' +
+      String(selectedMonth).padStart(2, '0') + '-' +
+      String(day).padStart(2, '0');
+
+    // 既有客戶原始生日可保留，不受新建年齡限制
+    const isOriginalBirthday =
+      editingId !== null &&
+      birthdayStr === originalEditingBirthday;
+
+    if (
+      !isBirthdayWithinAgeLimit(birthdayStr) &&
+      !isOriginalBirthday
+    ) {
+      continue;
+    }
+
     const option = document.createElement('option');
     option.value = String(day).padStart(2, '0');
     option.textContent = day + '日';
     daySelect.appendChild(option);
   }
 
-  // 月份變更後，僅保留仍然有效的日期
-  if (previousDay && Number(previousDay) <= lastDay) {
+  if (
+    previousDay &&
+    Array.from(daySelect.options).some(
+      option => option.value === previousDay
+    )
+  ) {
     daySelect.value = previousDay;
   }
 
@@ -416,7 +585,8 @@ function syncBirthdayValue() {
 }
 
 // ========================================
-// V1.4：新增或編輯時帶入生日
+// V1.4.2：新增或編輯時帶入生日
+// 保護超出新限制的既有生日
 // ========================================
 
 function setBirthdayPickerValue(birthdayStr) {
@@ -424,9 +594,12 @@ function setBirthdayPickerValue(birthdayStr) {
   const monthSelect = document.getElementById('birthday-month');
   const daySelect = document.getElementById('birthday-day');
 
+  // 每次開啟表單都重新計算當天的可選年份
+  initializeBirthdayPicker();
+
   yearSelect.value = '';
   monthSelect.value = '';
-  updateBirthdayDays();
+  daySelect.value = '';
 
   if (!birthdayStr) {
     syncBirthdayValue();
@@ -443,7 +616,7 @@ function setBirthdayPickerValue(birthdayStr) {
   const month = parts[1];
   const day = parts[2];
 
-  // 保留超出預設年份範圍的既有生日
+  // 既有客戶超出年份範圍時，加入原始年份
   if (!Array.from(yearSelect.options).some(option => option.value === year)) {
     const option = document.createElement('option');
     option.value = year;
@@ -452,11 +625,25 @@ function setBirthdayPickerValue(birthdayStr) {
   }
 
   yearSelect.value = year;
-  monthSelect.value = month;
+
+  // 依原始年份更新月份，並保留原始生日所在月份
+  updateBirthdayMonths();
+
+  if (
+    Array.from(monthSelect.options).some(
+      option => option.value === month
+    )
+  ) {
+    monthSelect.value = month;
+  }
 
   updateBirthdayDays();
 
-  if (Array.from(daySelect.options).some(option => option.value === day)) {
+  if (
+    Array.from(daySelect.options).some(
+      option => option.value === day
+    )
+  ) {
     daySelect.value = day;
   }
 
@@ -1351,6 +1538,9 @@ function openModalForAdd() {
   pendingClientId = null;
   editingId = null;
 
+  // V1.4.2：新增模式沒有既有生日例外
+  originalEditingBirthday = '';
+
   // V1.2：清除上次身分證字號錯誤提示
   clearIdNumberError();
 
@@ -1360,7 +1550,7 @@ function openModalForAdd() {
   document.getElementById('client-name').value = '';
   document.getElementById('client-gender').value = '';
 
-  // V1.4：清空生日選擇器
+  // V1.4.2：清空生日選擇器並更新可選日期
   setBirthdayPickerValue('');
 
   document.getElementById('client-source-type').value = '緣故';
@@ -1392,6 +1582,9 @@ function openModalForEdit(id) {
 
   editingId = id;
 
+  // V1.4.2：記錄既有生日，避免年齡限制阻止編輯其他欄位
+  originalEditingBirthday = client.birthday || '';
+
   // V1.2：清除上次身分證字號錯誤提示
   clearIdNumberError();
 
@@ -1401,7 +1594,7 @@ function openModalForEdit(id) {
   document.getElementById('client-name').value = client.name || '';
   document.getElementById('client-gender').value = client.gender || '';
 
-  // V1.4：帶入既有生日
+  // V1.4.2：帶入既有生日，必要時保留超出範圍的選項
   setBirthdayPickerValue(client.birthday || '');
 
   document.getElementById('client-source-type').value = client.source && client.source.type ? client.source.type : '緣故';
@@ -1483,6 +1676,25 @@ function saveClient() {
 
   if (!name || !birthday) {
     alert('請填寫姓名與生日！');
+    return;
+  }
+
+  // ========================================
+  // V1.4.2：生日最高 99 足歲驗證
+  // 既有客戶原始生日不變時允許儲存
+  // ========================================
+
+  const isUnchangedExistingBirthday =
+    editingId !== null &&
+    birthday === originalEditingBirthday;
+
+  // 待重試的新增請求仍使用 V1.1 原始資料
+  if (
+    !pendingAddPayload &&
+    !isUnchangedExistingBirthday &&
+    !isBirthdayWithinAgeLimit(birthday)
+  ) {
+    alert('生日超出允許範圍，客戶實際年齡最高為 99 歲，請重新選擇生日。');
     return;
   }
 
