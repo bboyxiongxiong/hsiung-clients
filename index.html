@@ -122,7 +122,22 @@
           </div>
           <div class="col-6">
             <label class="form-label small fw-bold">生日 *</label>
-            <input type="date" class="form-control" id="client-birthday">
+
+            <!-- V1.4：自訂民國＋西元生日選擇器 -->
+            <div class="d-flex gap-1">
+              <select class="form-select form-select-sm" id="birthday-year" aria-label="生日年份" style="min-width: 0; flex: 1.8;" onchange="updateBirthdayDays()">
+                <option value="">年</option>
+              </select>
+              <select class="form-select form-select-sm" id="birthday-month" aria-label="生日月份" style="min-width: 0; flex: 1;" onchange="updateBirthdayDays()">
+                <option value="">月</option>
+              </select>
+              <select class="form-select form-select-sm" id="birthday-day" aria-label="生日日期" style="min-width: 0; flex: 1;">
+                <option value="">日</option>
+              </select>
+            </div>
+
+            <!-- V1.4：保留原生日欄位作為 YYYY-MM-DD 資料接口 -->
+            <input type="hidden" id="client-birthday">
           </div>
         </div>
 
@@ -291,8 +306,162 @@ document.addEventListener("DOMContentLoaded", () => {
     if (clientSaving) e.preventDefault();
   });
 
+  // V1.4：初始化生日年份及月份選項
+  initializeBirthdayPicker();
+
   loadData();
 });
+
+// ========================================
+// V1.4：民國與西元生日顯示
+// ========================================
+
+function formatBirthdayWithRoc(birthdayStr) {
+  if (!birthdayStr) return '';
+
+  const parts = String(birthdayStr).split('-');
+  if (parts.length !== 3) return birthdayStr;
+
+  const year = Number(parts[0]);
+  if (!Number.isInteger(year) || year < 1) {
+    return birthdayStr;
+  }
+
+  return '(' + (year - 1911) + ')' + birthdayStr;
+}
+
+// ========================================
+// V1.4：初始化自訂生日選擇器
+// ========================================
+
+function initializeBirthdayPicker() {
+  const yearSelect = document.getElementById('birthday-year');
+  const monthSelect = document.getElementById('birthday-month');
+
+  yearSelect.innerHTML = '<option value="">年</option>';
+  monthSelect.innerHTML = '<option value="">月</option>';
+
+  const currentYear = new Date().getFullYear();
+
+  // 從今年往前 130 年，並預留未來一年
+  // 避免既有客戶生日超出可選年份範圍
+  for (let year = currentYear + 1; year >= currentYear - 130; year--) {
+    const option = document.createElement('option');
+    option.value = String(year);
+    option.textContent = '(' + (year - 1911) + ')' + year + '年';
+    yearSelect.appendChild(option);
+  }
+
+  for (let month = 1; month <= 12; month++) {
+    const option = document.createElement('option');
+    option.value = String(month).padStart(2, '0');
+    option.textContent = month + '月';
+    monthSelect.appendChild(option);
+  }
+
+  updateBirthdayDays();
+}
+
+// ========================================
+// V1.4：依年份及月份更新可選日期
+// ========================================
+
+function updateBirthdayDays() {
+  const year = document.getElementById('birthday-year').value;
+  const month = document.getElementById('birthday-month').value;
+  const daySelect = document.getElementById('birthday-day');
+  const previousDay = daySelect.value;
+
+  daySelect.innerHTML = '<option value="">日</option>';
+
+  if (!year || !month) {
+    syncBirthdayValue();
+    return;
+  }
+
+  const lastDay = new Date(
+    Number(year),
+    Number(month),
+    0
+  ).getDate();
+
+  for (let day = 1; day <= lastDay; day++) {
+    const option = document.createElement('option');
+    option.value = String(day).padStart(2, '0');
+    option.textContent = day + '日';
+    daySelect.appendChild(option);
+  }
+
+  // 月份變更後，僅保留仍然有效的日期
+  if (previousDay && Number(previousDay) <= lastDay) {
+    daySelect.value = previousDay;
+  }
+
+  syncBirthdayValue();
+}
+
+// ========================================
+// V1.4：同步選擇器與原本生日欄位
+// ========================================
+
+function syncBirthdayValue() {
+  const year = document.getElementById('birthday-year').value;
+  const month = document.getElementById('birthday-month').value;
+  const day = document.getElementById('birthday-day').value;
+
+  document.getElementById('client-birthday').value =
+    year && month && day
+      ? year + '-' + month + '-' + day
+      : '';
+}
+
+// ========================================
+// V1.4：新增或編輯時帶入生日
+// ========================================
+
+function setBirthdayPickerValue(birthdayStr) {
+  const yearSelect = document.getElementById('birthday-year');
+  const monthSelect = document.getElementById('birthday-month');
+  const daySelect = document.getElementById('birthday-day');
+
+  yearSelect.value = '';
+  monthSelect.value = '';
+  updateBirthdayDays();
+
+  if (!birthdayStr) {
+    syncBirthdayValue();
+    return;
+  }
+
+  const parts = String(birthdayStr).split('-');
+  if (parts.length !== 3) {
+    syncBirthdayValue();
+    return;
+  }
+
+  const year = parts[0];
+  const month = parts[1];
+  const day = parts[2];
+
+  // 保留超出預設年份範圍的既有生日
+  if (!Array.from(yearSelect.options).some(option => option.value === year)) {
+    const option = document.createElement('option');
+    option.value = year;
+    option.textContent = '(' + (Number(year) - 1911) + ')' + year + '年';
+    yearSelect.appendChild(option);
+  }
+
+  yearSelect.value = year;
+  monthSelect.value = month;
+
+  updateBirthdayDays();
+
+  if (Array.from(daySelect.options).some(option => option.value === day)) {
+    daySelect.value = day;
+  }
+
+  syncBirthdayValue();
+}
 
 // ========================================
 // V1.2：身分證字號標準化
@@ -898,7 +1067,7 @@ function renderClients(clients, sortMode = 'default') {
           </div>
           ${sourceHtml}
           <div class="small text-secondary mb-1">
-            <i class="bi bi-calendar-event me-1"></i> 生日：${c.birthday || ''} <span class="ms-3"><i class="bi bi-card-heading me-1"></i> 身分證：${c.idNumber || '未填寫'}</span>
+            <i class="bi bi-calendar-event me-1"></i> 生日：${formatBirthdayWithRoc(c.birthday)} <span class="ms-3"><i class="bi bi-card-heading me-1"></i> 身分證：${c.idNumber || '未填寫'}</span>
           </div>
           <div class="small text-secondary mb-1">
             ${occupationHtml}
@@ -1190,7 +1359,10 @@ function openModalForAdd() {
   document.getElementById('client-id').value = '';
   document.getElementById('client-name').value = '';
   document.getElementById('client-gender').value = '';
-  document.getElementById('client-birthday').value = '';
+
+  // V1.4：清空生日選擇器
+  setBirthdayPickerValue('');
+
   document.getElementById('client-source-type').value = '緣故';
   onSourceTypeChange();
   document.getElementById('client-source-referrer').value = '';
@@ -1228,7 +1400,9 @@ function openModalForEdit(id) {
   document.getElementById('client-id').value = client.id;
   document.getElementById('client-name').value = client.name || '';
   document.getElementById('client-gender').value = client.gender || '';
-  document.getElementById('client-birthday').value = client.birthday || '';
+
+  // V1.4：帶入既有生日
+  setBirthdayPickerValue(client.birthday || '');
 
   document.getElementById('client-source-type').value = client.source && client.source.type ? client.source.type : '緣故';
   onSourceTypeChange();
@@ -1268,6 +1442,9 @@ function saveClient() {
 
   const name = document.getElementById('client-name').value.trim();
   const gender = document.getElementById('client-gender').value;
+
+  // V1.4：將自訂生日選擇器轉為 YYYY-MM-DD
+  syncBirthdayValue();
   const birthday = document.getElementById('client-birthday').value;
 
   const sourceType = document.getElementById('client-source-type').value;
@@ -1498,6 +1675,10 @@ function deleteClient(id) {
     alert('刪除發生錯誤');
   });
 }
+
+// V1.4：日期變更後同步原本的生日欄位
+document.getElementById('birthday-day').addEventListener('change', syncBirthdayValue);
+
 </script>
 </body>
 </html>
