@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -507,57 +508,181 @@ function checkTodayBirthdays() {
   }
 }
 
+// ========================================
+// V1.3：保險年齡計算修正
+// 剛好滿六個月不進位，超過六個月才進位
+// 同步修正進位倒數、月底及閏年日期計算
+// ========================================
+
 function calculateBirthdayInfo(birthdayStr) {
-  if (!birthdayStr) return { daysLeft: 0, currentAge: 0, insuranceAge: 0, daysToInsuranceAgeInc: 0 };
-  const today = new Date();
-  today.setHours(0,0,0,0);
+  const emptyResult = {
+    daysLeft: 0,
+    currentAge: 0,
+    insuranceAge: 0,
+    daysToInsuranceAgeInc: 0
+  };
+
+  if (!birthdayStr) return emptyResult;
 
   const parts = birthdayStr.split('-');
-  if (parts.length !== 3) return { daysLeft: 0, currentAge: 0, insuranceAge: 0, daysToInsuranceAgeInc: 0 };
+  if (parts.length !== 3) return emptyResult;
 
-  const birthYear = parseInt(parts[0]);
-  const birthMonth = parseInt(parts[1]) - 1;
-  const birthDay = parseInt(parts[2]);
+  const birthYear = parseInt(parts[0], 10);
+  const birthMonth = parseInt(parts[1], 10) - 1;
+  const birthDay = parseInt(parts[2], 10);
+
+  if (
+    !Number.isInteger(birthYear) ||
+    !Number.isInteger(birthMonth) ||
+    !Number.isInteger(birthDay) ||
+    birthMonth < 0 ||
+    birthMonth > 11 ||
+    birthDay < 1 ||
+    birthDay > 31
+  ) {
+    return emptyResult;
+  }
+
+  const originalBirthday = new Date(
+    birthYear,
+    birthMonth,
+    birthDay
+  );
+
+  if (
+    originalBirthday.getFullYear() !== birthYear ||
+    originalBirthday.getMonth() !== birthMonth ||
+    originalBirthday.getDate() !== birthDay
+  ) {
+    return emptyResult;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   const currentYear = today.getFullYear();
 
+  // 取得指定年份的生日
+  // 2 月 29 日遇非閏年，以 2 月最後一天計算
+  function getBirthday(year) {
+    const lastDay = new Date(
+      year,
+      birthMonth + 1,
+      0
+    ).getDate();
+
+    return new Date(
+      year,
+      birthMonth,
+      Math.min(birthDay, lastDay)
+    );
+  }
+
+  // 加上六個日曆月
+  // 若目標月份沒有相同日期，採該月最後一天
+  function addSixMonths(date) {
+    const targetYear = date.getFullYear();
+    const targetMonth = date.getMonth() + 6;
+    const targetDay = date.getDate();
+
+    const lastDay = new Date(
+      targetYear,
+      targetMonth + 1,
+      0
+    ).getDate();
+
+    return new Date(
+      targetYear,
+      targetMonth,
+      Math.min(targetDay, lastDay)
+    );
+  }
+
+  // 超過六個月：滿六個月的隔天才進位
+  function getInsuranceIncreaseDate(birthday) {
+    const date = addSixMonths(birthday);
+    date.setDate(date.getDate() + 1);
+    return date;
+  }
+
+  // 以日曆日期計算天數，避免日光節約時間影響
+  function calendarDaysBetween(startDate, endDate) {
+    const startUTC = Date.UTC(
+      startDate.getFullYear(),
+      startDate.getMonth(),
+      startDate.getDate()
+    );
+
+    const endUTC = Date.UTC(
+      endDate.getFullYear(),
+      endDate.getMonth(),
+      endDate.getDate()
+    );
+
+    return Math.round(
+      (endUTC - startUTC) / 86400000
+    );
+  }
+
+  // 計算實際足歲
   let currentAge = currentYear - birthYear;
-  const birthdayThisYear = new Date(currentYear, birthMonth, birthDay);
-  birthdayThisYear.setHours(0,0,0,0);
+
+  const birthdayThisYear = getBirthday(currentYear);
+
   if (today < birthdayThisYear) {
     currentAge -= 1;
   }
 
-  let nextBirthday = new Date(currentYear, birthMonth, birthDay);
-  nextBirthday.setHours(0,0,0,0);
-  if (nextBirthday < today) {
-    nextBirthday.setFullYear(currentYear + 1);
-  }
-  const diffTime = nextBirthday - today;
-  const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  // 計算下次生日倒數
+  let nextBirthday = getBirthday(currentYear);
 
-  let lastBday = new Date(currentYear, birthMonth, birthDay);
-  lastBday.setHours(0,0,0,0);
-  if (today < lastBday) {
-    lastBday.setFullYear(currentYear - 1);
+  if (nextBirthday < today) {
+    nextBirthday = getBirthday(currentYear + 1);
   }
+
+  const daysLeft = calendarDaysBetween(
+    today,
+    nextBirthday
+  );
+
+  // 最近一次生日
+  let lastBirthday = getBirthday(currentYear);
+
+  if (today < lastBirthday) {
+    lastBirthday = getBirthday(currentYear - 1);
+  }
+
+  // 最近一次生日滿六個月後的隔天
+  const increaseDate = getInsuranceIncreaseDate(
+    lastBirthday
+  );
 
   let insuranceAge = currentAge;
-  let halfYearMark = new Date(lastBday);
-  halfYearMark.setMonth(halfYearMark.getMonth() + 6);
-  if (today >= halfYearMark) {
+
+  if (today >= increaseDate) {
     insuranceAge = currentAge + 1;
   }
 
-  let incDate = new Date(lastBday);
-  incDate.setMonth(incDate.getMonth() + 6);
-  if (incDate <= today) {
-    incDate.setFullYear(incDate.getFullYear() + 1);
-  }
-  const diffInsTime = incDate - today;
-  const daysToInsuranceAgeInc = Math.ceil(diffInsTime / (1000 * 60 * 60 * 24));
+  // 下一次保險年齡進位日期
+  let nextIncreaseDate = increaseDate;
 
-  return { daysLeft, currentAge, insuranceAge, daysToInsuranceAgeInc };
+  if (nextIncreaseDate <= today) {
+    nextIncreaseDate = getInsuranceIncreaseDate(
+      getBirthday(lastBirthday.getFullYear() + 1)
+    );
+  }
+
+  const daysToInsuranceAgeInc = calendarDaysBetween(
+    today,
+    nextIncreaseDate
+  );
+
+  return {
+    daysLeft,
+    currentAge,
+    insuranceAge,
+    daysToInsuranceAgeInc
+  };
 }
 
 function filterClients() {
