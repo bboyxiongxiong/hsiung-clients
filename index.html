@@ -81,20 +81,6 @@
           <option value="ins-11">11月</option>
           <option value="ins-12">12月</option>
         </optgroup>
-        <optgroup label="強制險到期月份">
-          <option value="ins-01">1月</option>
-          <option value="ins-02">2月</option>
-          <option value="ins-03">3月</option>
-          <option value="ins-04">4月</option>
-          <option value="ins-05">5月</option>
-          <option value="ins-06">6月</option>
-          <option value="ins-07">7月</option>
-          <option value="ins-08">8月</option>
-          <option value="ins-09">9月</option>
-          <option value="ins-10">10月</option>
-          <option value="ins-11">11月</option>
-          <option value="ins-12">12月</option>
-        </optgroup>
       </select>
     </div>
   </div>
@@ -126,7 +112,8 @@
           <input type="text" class="form-control" id="client-name" placeholder="">
         </div>
         <div class="row g-2 mb-3">
-          <div class="col-4">
+          <!-- V1.4.3：縮短性別欄位 -->
+          <div class="col-3">
             <label class="form-label small fw-bold">性別</label>
             <select class="form-select" id="client-gender">
               <option value="">請選擇</option>
@@ -134,12 +121,13 @@
               <option value="女">女</option>
             </select>
           </div>
-          <div class="col-8">
+          <!-- V1.4.3：加寬生日欄位 -->
+          <div class="col-9">
             <label class="form-label small fw-bold">生日 *</label>
 
-            <!-- V1.4.2：民國＋西元生日選擇器，最高 99 足歲 -->
+            <!-- V1.4.3：民國＋西元生日選擇器，最高 99 足歲 -->
             <div class="d-flex gap-1">
-              <select class="form-select form-select-sm" id="birthday-year" aria-label="生日年份" style="min-width: 0; flex: 1.8;" onchange="updateBirthdayMonths()">
+              <select class="form-select form-select-sm" id="birthday-year" aria-label="生日年份" style="min-width: 0; flex: 2.5;" onchange="updateBirthdayMonths()">
                 <option value="">年</option>
               </select>
               <select class="form-select form-select-sm" id="birthday-month" aria-label="生日月份" style="min-width: 0; flex: 1;" onchange="updateBirthdayDays()">
