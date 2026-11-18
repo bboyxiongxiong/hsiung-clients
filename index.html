@@ -7,6 +7,78 @@
   <title>客戶紀錄 - 名單管理系統</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+  <style>
+    /* V1.4.5：三個提醒區塊統一版型 */
+    .reminder-box {
+      border: 1px solid;
+      border-radius: 1rem;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 .125rem .25rem rgba(0,0,0,.075);
+    }
+    .reminder-birthday {
+      background-color: #fff3cd;
+      border-color: #ffca2c;
+      color: #493600;
+    }
+    .reminder-expired {
+      background-color: #fce8e8;
+      border-color: #e79a9a;
+      color: #8e2018;
+    }
+    .reminder-upcoming {
+      background-color: #e7f3ff;
+      border-color: #8cb9f2;
+      color: #173b68;
+    }
+    .reminder-heading {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      font-weight: 700;
+      margin-bottom: .75rem;
+    }
+    .reminder-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: .5rem;
+      padding: .5rem 0;
+    }
+    .reminder-item + .reminder-item {
+      border-top: 1px solid rgba(0,0,0,.1);
+    }
+    .reminder-name {
+      flex-shrink: 0;
+      font-size: .875rem;
+      font-weight: 700;
+      padding: .15rem .55rem;
+    }
+    .reminder-detail {
+      text-align: right;
+      font-size: .875rem;
+      overflow-wrap: anywhere;
+      font-variant-numeric: tabular-nums;
+    }
+    .reminder-birthday .reminder-detail {
+      color: #6b5300;
+    }
+    .reminder-expired .reminder-detail {
+      color: #b42318;
+    }
+    .reminder-upcoming .reminder-detail {
+      color: #345879;
+    }
+
+    /* V1.4.5：手機性別選單高度、字體及內距 */
+    #client-gender {
+      font-size: 12px;
+      padding-left: 6px;
+      padding-right: 20px;
+      background-position: right 4px center;
+      min-width: 0;
+    }
+  </style>
 </head>
 <body>
 
@@ -85,12 +157,31 @@
     </div>
   </div>
 
-  <!-- 本日壽星顯示區塊 -->
-  <div id="today-birthday-banner" class="alert alert-warning border-warning shadow-sm rounded-4 mb-3 p-3 text-dark" style="display: none;">
-    <div class="d-flex align-items-center">
-      <i class="bi bi-cake2-fill text-warning fs-4 me-2"></i>
-      <div id="today-birthday-content"></div>
+  <!-- V1.4.5：本日壽星 -->
+  <div id="today-birthday-banner" class="reminder-box reminder-birthday" style="display: none;">
+    <div class="reminder-heading">
+      <i class="bi bi-cake2-fill"></i>
+      <span id="today-birthday-title">本日壽星</span>
     </div>
+    <div id="today-birthday-content"></div>
+  </div>
+
+  <!-- V1.4.5：車險已過期 -->
+  <div id="expired-insurance-banner" class="reminder-box reminder-expired" style="display: none;">
+    <div class="reminder-heading">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span id="expired-insurance-title">車險已過期</span>
+    </div>
+    <div id="expired-insurance-content"></div>
+  </div>
+
+  <!-- V1.4.5：近兩個月車險即將到期 -->
+  <div id="upcoming-insurance-banner" class="reminder-box reminder-upcoming" style="display: none;">
+    <div class="reminder-heading">
+      <i class="bi bi-car-front-fill"></i>
+      <span id="upcoming-insurance-title">近兩個月車險即將到期</span>
+    </div>
+    <div id="upcoming-insurance-content"></div>
   </div>
 
   <!-- 客戶名單列表 -->
@@ -112,20 +203,18 @@
           <input type="text" class="form-control" id="client-name" placeholder="">
         </div>
         <div class="row g-2 mb-3">
-          <!-- V1.4.3：縮短性別欄位 -->
+          <!-- V1.4.5：性別欄位維持 25%，高度與生日一致 -->
           <div class="col-3">
             <label class="form-label small fw-bold">性別</label>
-            <select class="form-select" id="client-gender">
+            <select class="form-select form-select-sm" id="client-gender">
               <option value="">請選擇</option>
               <option value="男">男</option>
               <option value="女">女</option>
             </select>
           </div>
-          <!-- V1.4.3：加寬生日欄位 -->
+          <!-- V1.4.3：生日欄位維持 75% -->
           <div class="col-9">
             <label class="form-label small fw-bold">生日 *</label>
-
-            <!-- V1.4.3：民國＋西元生日選擇器，最高 99 足歲 -->
             <div class="d-flex gap-1">
               <select class="form-select form-select-sm" id="birthday-year" aria-label="生日年份" style="min-width: 0; flex: 2.5;" onchange="updateBirthdayMonths()">
                 <option value="">年</option>
@@ -137,8 +226,6 @@
                 <option value="">日</option>
               </select>
             </div>
-
-            <!-- 保留原生日欄位作為 YYYY-MM-DD 資料接口 -->
             <input type="hidden" id="client-birthday">
           </div>
         </div>
@@ -335,6 +422,132 @@ function formatBirthdayWithRoc(birthdayStr) {
 }
 
 // ========================================
+// V1.4.5：提醒區塊專用工具
+// ========================================
+
+function escapeReminderHtml(value) {
+  return String(value === null || value === undefined ? '' : value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function parseReminderDate(dateStr) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dateStr || ''));
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+
+  if (year < 1 || month < 1 || month > 12 || day < 1 || day > 31) {
+    return null;
+  }
+
+  const date = new Date(year, month - 1, day);
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function reminderCalendarDaysBetween(startDate, endDate) {
+  const startUTC = Date.UTC(
+    startDate.getFullYear(),
+    startDate.getMonth(),
+    startDate.getDate()
+  );
+
+  const endUTC = Date.UTC(
+    endDate.getFullYear(),
+    endDate.getMonth(),
+    endDate.getDate()
+  );
+
+  return Math.round((endUTC - startUTC) / 86400000);
+}
+
+function reminderAddCalendarMonths(date, months) {
+  const targetFirstDay = new Date(
+    date.getFullYear(),
+    date.getMonth() + months,
+    1
+  );
+
+  const lastDay = new Date(
+    targetFirstDay.getFullYear(),
+    targetFirstDay.getMonth() + 1,
+    0
+  ).getDate();
+
+  return new Date(
+    targetFirstDay.getFullYear(),
+    targetFirstDay.getMonth(),
+    Math.min(date.getDate(), lastDay)
+  );
+}
+
+function createReminderNameButton(client) {
+  return `
+    <button type="button"
+      class="btn btn-dark btn-sm reminder-name"
+      data-reminder-client-id="${escapeReminderHtml(client.id)}">
+      ${escapeReminderHtml(client.name || '未命名')}
+    </button>
+  `;
+}
+
+// 使用客戶 ID，避免同名客戶定位錯誤
+document.addEventListener('click', function(e) {
+  const button = e.target.closest('[data-reminder-client-id]');
+  if (!button) return;
+
+  jumpToClientById(button.getAttribute('data-reminder-client-id'));
+});
+
+function jumpToClientById(clientId) {
+  const target = allClients.find(c => String(c.id) === String(clientId));
+
+  if (!target) {
+    alert('找不到這位客戶的資料。');
+    return;
+  }
+
+  // 保留原有搜尋與篩選功能，但清除可能排除目標的條件
+  document.getElementById('search-input').value = target.name || '';
+  document.getElementById('month-select').value = '';
+
+  // 直接使用既有字卡渲染功能，確保只顯示正確的客戶 ID
+  renderClients([target]);
+
+  setTimeout(() => {
+    const cardEl = document.getElementById(`client-card-${target.id}`);
+
+    if (cardEl) {
+      cardEl.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+
+      cardEl.classList.add('border', 'border-primary', 'shadow');
+
+      setTimeout(() => {
+        cardEl.classList.remove('border', 'border-primary', 'shadow');
+      }, 2000);
+    }
+  }, 100);
+}
+
+// ========================================
 // V1.4.2：取得生日允許的最早日期
 // 已滿 100 歲不允許新增
 // ========================================
@@ -343,8 +556,6 @@ function getMinimumBirthdayDate() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  // 先回推 100 年，再加一天
-  // 例如 2026-11-18 -> 1926-11-19
   const minimumDate = new Date(
     today.getFullYear() - 100,
     today.getMonth(),
@@ -400,8 +611,6 @@ function isBirthdayWithinAgeLimit(birthdayStr) {
 
 // ========================================
 // V1.4.2：初始化自訂生日選擇器
-// 年份依今天自動更新
-// 同時保留民國元年 1912 年的下限
 // ========================================
 
 function initializeBirthdayPicker() {
@@ -417,7 +626,6 @@ function initializeBirthdayPicker() {
     getMinimumBirthdayDate().getFullYear()
   );
 
-  // 預留未來一年，維持 V1.4 原本行為
   for (let year = currentYear + 1; year >= minimumYear; year--) {
     const option = document.createElement('option');
     option.value = String(year);
@@ -430,7 +638,6 @@ function initializeBirthdayPicker() {
 
 // ========================================
 // V1.4.2：依年份更新月份選項
-// 排除整個月份都已超過 99 歲的情況
 // ========================================
 
 function updateBirthdayMonths() {
@@ -461,7 +668,6 @@ function updateBirthdayMonths() {
       lastDay
     );
 
-    // 既有客戶原始生日所在月份，允許保留
     const originalParts = originalEditingBirthday.split('-');
     const isOriginalMonth =
       editingId !== null &&
@@ -496,7 +702,6 @@ function updateBirthdayMonths() {
 
 // ========================================
 // V1.4.2：依年份及月份更新日期
-// 精確限制已滿 100 歲的生日
 // ========================================
 
 function updateBirthdayDays() {
@@ -527,7 +732,6 @@ function updateBirthdayDays() {
       String(selectedMonth).padStart(2, '0') + '-' +
       String(day).padStart(2, '0');
 
-    // 既有客戶原始生日可保留，不受新建年齡限制
     const isOriginalBirthday =
       editingId !== null &&
       birthdayStr === originalEditingBirthday;
@@ -574,7 +778,6 @@ function syncBirthdayValue() {
 
 // ========================================
 // V1.4.2：新增或編輯時帶入生日
-// 保護超出新限制的既有生日
 // ========================================
 
 function setBirthdayPickerValue(birthdayStr) {
@@ -582,7 +785,6 @@ function setBirthdayPickerValue(birthdayStr) {
   const monthSelect = document.getElementById('birthday-month');
   const daySelect = document.getElementById('birthday-day');
 
-  // 每次開啟表單都重新計算當天的可選年份
   initializeBirthdayPicker();
 
   yearSelect.value = '';
@@ -604,7 +806,6 @@ function setBirthdayPickerValue(birthdayStr) {
   const month = parts[1];
   const day = parts[2];
 
-  // 既有客戶超出年份範圍時，加入原始年份
   if (!Array.from(yearSelect.options).some(option => option.value === year)) {
     const option = document.createElement('option');
     option.value = year;
@@ -613,8 +814,6 @@ function setBirthdayPickerValue(birthdayStr) {
   }
 
   yearSelect.value = year;
-
-  // 依原始年份更新月份，並保留原始生日所在月份
   updateBirthdayMonths();
 
   if (
@@ -657,42 +856,20 @@ function normalizeIdNumber(value) {
 function isValidTaiwanIdNumber(value) {
   const idNumber = normalizeIdNumber(value);
 
-  // 身分證字號維持非必填
   if (idNumber === '') {
     return true;
   }
 
-  // 第一碼英文，第二碼 1 或 2，後面八碼數字
   if (!/^[A-Z][12][0-9]{8}$/.test(idNumber)) {
     return false;
   }
 
   const letterCodes = {
-    A: 10,
-    B: 11,
-    C: 12,
-    D: 13,
-    E: 14,
-    F: 15,
-    G: 16,
-    H: 17,
-    I: 34,
-    J: 18,
-    K: 19,
-    L: 20,
-    M: 21,
-    N: 22,
-    O: 35,
-    P: 23,
-    Q: 24,
-    R: 25,
-    S: 26,
-    T: 27,
-    U: 28,
-    V: 29,
-    W: 32,
-    X: 30,
-    Y: 31,
+    A: 10, B: 11, C: 12, D: 13, E: 14,
+    F: 15, G: 16, H: 17, I: 34, J: 18,
+    K: 19, L: 20, M: 21, N: 22, O: 35,
+    P: 23, Q: 24, R: 25, S: 26, T: 27,
+    U: 28, V: 29, W: 32, X: 30, Y: 31,
     Z: 33
   };
 
@@ -702,12 +879,10 @@ function isValidTaiwanIdNumber(value) {
     Math.floor(letterCode / 10) +
     (letterCode % 10) * 9;
 
-  // 第二碼至第九碼依序乘上 8 至 1
   for (let i = 1; i <= 8; i++) {
     sum += Number(idNumber.charAt(i)) * (9 - i);
   }
 
-  // 加上最後一碼檢查碼
   sum += Number(idNumber.charAt(9));
 
   return sum % 10 === 0;
@@ -779,6 +954,7 @@ function onReferrerInput(keyword) {
     dropdown.style.display = 'none';
     return;
   }
+
   const kw = keyword.toLowerCase();
   const matches = allClients.filter(c => c.name && c.name.toLowerCase().includes(kw));
 
@@ -815,6 +991,10 @@ function loadData() {
       allClients = data.clients || [];
       allInterviews = data.interviews || [];
       checkTodayBirthdays();
+
+      // V1.4.5：載入資料時同步計算車險提醒
+      checkVehicleInsuranceAlerts();
+
       filterClients();
     })
     .catch(err => {
@@ -823,6 +1003,10 @@ function loadData() {
     });
 }
 
+// ========================================
+// V1.4.5：本日壽星統一版型
+// ========================================
+
 function checkTodayBirthdays() {
   const today = new Date();
   const currentMonth = String(today.getMonth() + 1).padStart(2, '0');
@@ -830,26 +1014,128 @@ function checkTodayBirthdays() {
 
   const todayBirthdays = allClients.filter(c => {
     if (!c.birthday) return false;
-    const parts = c.birthday.split('-');
-    if (parts.length === 3) {
-      return parts[1] === currentMonth && parts[2] === currentDate;
-    }
-    return false;
+    const parts = String(c.birthday).split('-');
+    return parts.length === 3 &&
+      parts[1] === currentMonth &&
+      parts[2] === currentDate;
   });
 
   const banner = document.getElementById('today-birthday-banner');
+  const title = document.getElementById('today-birthday-title');
   const content = document.getElementById('today-birthday-content');
 
-  if (todayBirthdays.length > 0) {
-    let namesHtml = todayBirthdays.map(c =>
-      `<button class="btn btn-sm btn-dark py-0 px-2 me-1 fw-bold" onclick="jumpToClientByName('${c.name}')"><i class="bi bi-gift-fill me-1"></i>${c.name}</button>`
-    ).join('');
-
-    content.innerHTML = `<div><strong>本日壽星 (${today.getMonth() + 1}月${today.getDate()}日)：</strong> ${namesHtml} 記得送上祝賀！</div>`;
-    banner.style.display = 'block';
-  } else {
+  if (todayBirthdays.length === 0) {
     banner.style.display = 'none';
+    content.innerHTML = '';
+    return;
   }
+
+  title.textContent =
+    `本日壽星（${today.getMonth() + 1}月${today.getDate()}日，${todayBirthdays.length} 位）`;
+
+  content.innerHTML = todayBirthdays.map(c => `
+    <div class="reminder-item">
+      ${createReminderNameButton(c)}
+      <span class="reminder-detail">
+        ${escapeReminderHtml(formatBirthdayWithRoc(c.birthday))}
+      </span>
+    </div>
+  `).join('');
+
+  banner.style.display = 'block';
+}
+
+// ========================================
+// V1.4.5：車險過期及未來兩個月到期提醒
+// ========================================
+
+function checkVehicleInsuranceAlerts() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const endDate = reminderAddCalendarMonths(today, 2);
+  const expired = [];
+  const upcoming = [];
+
+  allClients.forEach(client => {
+    if (!Array.isArray(client.vehicles)) return;
+
+    client.vehicles.forEach(vehicle => {
+      const expiryDate = parseReminderDate(vehicle.expiry);
+      if (!expiryDate) return;
+
+      const days = reminderCalendarDaysBetween(today, expiryDate);
+
+      const item = {
+        client: client,
+        vehicle: vehicle,
+        expiryDate: expiryDate,
+        days: days
+      };
+
+      if (expiryDate < today) {
+        expired.push(item);
+      } else if (expiryDate <= endDate) {
+        upcoming.push(item);
+      }
+    });
+  });
+
+  // 已過期：最近過期的優先
+  expired.sort((a, b) => b.expiryDate - a.expiryDate);
+
+  // 即將到期：最快到期的優先
+  upcoming.sort((a, b) => a.expiryDate - b.expiryDate);
+
+  renderVehicleInsuranceAlert('expired', expired);
+  renderVehicleInsuranceAlert('upcoming', upcoming);
+}
+
+function renderVehicleInsuranceAlert(type, items) {
+  const isExpired = type === 'expired';
+
+  const banner = document.getElementById(
+    isExpired ? 'expired-insurance-banner' : 'upcoming-insurance-banner'
+  );
+
+  const title = document.getElementById(
+    isExpired ? 'expired-insurance-title' : 'upcoming-insurance-title'
+  );
+
+  const content = document.getElementById(
+    isExpired ? 'expired-insurance-content' : 'upcoming-insurance-content'
+  );
+
+  if (items.length === 0) {
+    banner.style.display = 'none';
+    content.innerHTML = '';
+    return;
+  }
+
+  title.textContent = isExpired
+    ? `車險已過期（${items.length} 筆）`
+    : `近兩個月車險即將到期（${items.length} 筆）`;
+
+  content.innerHTML = items.map(item => {
+    const expiry = String(item.vehicle.expiry);
+
+    const dayText = isExpired
+      ? `已過期 ${Math.abs(item.days)} 天`
+      : item.days === 0
+        ? '今天到期'
+        : `剩 ${item.days} 天`;
+
+    return `
+      <div class="reminder-item">
+        ${createReminderNameButton(item.client)}
+        <span class="reminder-detail">
+          ${escapeReminderHtml(expiry)} · ${dayText}
+        </span>
+      </div>
+    `;
+  }).join('');
+
+  banner.style.display = 'block';
 }
 
 // ========================================
@@ -1487,6 +1773,10 @@ function loadDataForModal(clientId) {
       allClients = data.clients || [];
       allInterviews = data.interviews || [];
       checkTodayBirthdays();
+
+      // V1.4.5：同步更新車險提醒
+      checkVehicleInsuranceAlerts();
+
       filterClients();
       renderInterviewList(clientId);
     });
@@ -1676,7 +1966,6 @@ function saveClient() {
     editingId !== null &&
     birthday === originalEditingBirthday;
 
-  // 待重試的新增請求仍使用 V1.1 原始資料
   if (
     !pendingAddPayload &&
     !isUnchangedExistingBirthday &&
@@ -1703,15 +1992,12 @@ function saveClient() {
     action === 'add' ||
     idNumber !== oldIdNumber;
 
-  // 尚未確認的新增請求必須沿用原始資料重試
-  // 避免前端重複檢查阻止 V1.1 的重試機制
   if (
     !pendingAddPayload &&
     shouldValidateId &&
     idNumber !== ''
   ) {
 
-    // 檢查身分證字號格式
     if (!/^[A-Z][12][0-9]{8}$/.test(idNumber)) {
       showIdNumberError(
         '身分證字號格式錯誤，請輸入一個英文字母及九個數字，第二碼須為 1 或 2。'
@@ -1719,7 +2005,6 @@ function saveClient() {
       return;
     }
 
-    // 檢查身分證字號檢查碼
     if (!isValidTaiwanIdNumber(idNumber)) {
       showIdNumberError(
         '身分證字號檢查碼錯誤，請重新確認。'
@@ -1727,7 +2012,6 @@ function saveClient() {
       return;
     }
 
-    // 檢查其他客戶是否使用相同身分證字號
     const duplicateClient = allClients.find(c => {
       if (String(c.id) === String(editingId)) {
         return false;
@@ -1795,13 +2079,11 @@ function saveClient() {
     payload = pendingAddPayload;
   }
 
-  // V1.1：鎖定儲存按鈕
   const saveBtn = document.getElementById('save-client-btn');
   clientSaving = true;
   saveBtn.disabled = true;
   saveBtn.innerText = '儲存中...';
 
-  // V1.1：恢復儲存按鈕
   function unlockClientSave() {
     clientSaving = false;
     saveBtn.disabled = false;
@@ -1817,7 +2099,6 @@ function saveClient() {
     unlockClientSave();
 
     if (res.status === 'success') {
-      // V1.1：確認成功後才清除本次新增狀態
       pendingClientId = null;
       pendingAddPayload = null;
 
@@ -1826,14 +2107,11 @@ function saveClient() {
 
     } else {
 
-      // V1.2：處理後端身分證字號驗證錯誤
       if (
         res.code === 'INVALID_ID_NUMBER' ||
         res.code === 'DUPLICATE_ID_NUMBER'
       ) {
 
-        // 後端已確認拒絕此次寫入
-        // 解除待重試狀態，允許使用者修正資料
         if (action === 'add') {
           pendingClientId = null;
           pendingAddPayload = null;
