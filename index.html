@@ -8,7 +8,7 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   <style>
-    /* V1.4.5：三個提醒區塊統一版型 */
+    /* V1.4.4：三個提醒區塊統一版型 */
     .reminder-box {
       border: 1px solid;
       border-radius: 1rem;
@@ -397,7 +397,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (clientSaving) e.preventDefault();
   });
 
-  // V1.4.2：初始化生日年份及月份選項
+  // V1.4.5：初始化生日選擇器及未來日期限制
   initializeBirthdayPicker();
 
   loadData();
@@ -568,6 +568,21 @@ function getMinimumBirthdayDate() {
 }
 
 // ========================================
+// V1.4.5：確認生日不得晚於今天
+// 使用既有日期解析函式，包含真實日期驗證
+// ========================================
+
+function isBirthdayNotFuture(birthdayStr) {
+  const birthday = parseReminderDate(birthdayStr);
+  if (!birthday) return false;
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return birthday <= today;
+}
+
+// ========================================
 // V1.4.2：確認生日是否符合 99 足歲限制
 // ========================================
 
@@ -610,7 +625,8 @@ function isBirthdayWithinAgeLimit(birthdayStr) {
 }
 
 // ========================================
-// V1.4.2：初始化自訂生日選擇器
+// V1.4.5：初始化自訂生日選擇器
+// 年份最多只能選擇今年
 // ========================================
 
 function initializeBirthdayPicker() {
@@ -626,7 +642,7 @@ function initializeBirthdayPicker() {
     getMinimumBirthdayDate().getFullYear()
   );
 
-  for (let year = currentYear + 1; year >= minimumYear; year--) {
+  for (let year = currentYear; year >= minimumYear; year--) {
     const option = document.createElement('option');
     option.value = String(year);
     option.textContent = '(' + (year - 1911) + ')' + year + '年';
@@ -637,7 +653,8 @@ function initializeBirthdayPicker() {
 }
 
 // ========================================
-// V1.4.2：依年份更新月份選項
+// V1.4.5：依年份更新月份選項
+// 不提供未來月份，保留既有原始生日例外
 // ========================================
 
 function updateBirthdayMonths() {
@@ -645,6 +662,9 @@ function updateBirthdayMonths() {
   const monthSelect = document.getElementById('birthday-month');
   const previousMonth = monthSelect.value;
   const minimumDate = getMinimumBirthdayDate();
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   monthSelect.innerHTML = '<option value="">月</option>';
 
@@ -668,6 +688,12 @@ function updateBirthdayMonths() {
       lastDay
     );
 
+    const monthStartDate = new Date(
+      selectedYear,
+      month - 1,
+      1
+    );
+
     const originalParts = originalEditingBirthday.split('-');
     const isOriginalMonth =
       editingId !== null &&
@@ -676,7 +702,7 @@ function updateBirthdayMonths() {
       Number(originalParts[1]) === month;
 
     if (
-      monthEndDate < minimumDate &&
+      (monthEndDate < minimumDate || monthStartDate > today) &&
       !isOriginalMonth
     ) {
       continue;
@@ -701,7 +727,8 @@ function updateBirthdayMonths() {
 }
 
 // ========================================
-// V1.4.2：依年份及月份更新日期
+// V1.4.5：依年份及月份更新日期
+// 禁止未來日期，保留既有原始生日例外
 // ========================================
 
 function updateBirthdayDays() {
@@ -737,7 +764,10 @@ function updateBirthdayDays() {
       birthdayStr === originalEditingBirthday;
 
     if (
-      !isBirthdayWithinAgeLimit(birthdayStr) &&
+      (
+        !isBirthdayWithinAgeLimit(birthdayStr) ||
+        !isBirthdayNotFuture(birthdayStr)
+      ) &&
       !isOriginalBirthday
     ) {
       continue;
@@ -1828,7 +1858,7 @@ function openModalForAdd() {
   document.getElementById('client-name').value = '';
   document.getElementById('client-gender').value = '';
 
-  // V1.4.2：清空生日選擇器並更新可選日期
+  // V1.4.5：清空生日選擇器並更新可選日期
   setBirthdayPickerValue('');
 
   document.getElementById('client-source-type').value = '緣故';
@@ -1872,7 +1902,7 @@ function openModalForEdit(id) {
   document.getElementById('client-name').value = client.name || '';
   document.getElementById('client-gender').value = client.gender || '';
 
-  // V1.4.2：帶入既有生日，必要時保留超出範圍的選項
+  // V1.4.5：帶入既有生日，保留原始日期供辨識
   setBirthdayPickerValue(client.birthday || '');
 
   document.getElementById('client-source-type').value = client.source && client.source.type ? client.source.type : '緣故';
@@ -1954,6 +1984,16 @@ function saveClient() {
 
   if (!name || !birthday) {
     alert('請填寫姓名與生日！');
+    return;
+  }
+
+  // ========================================
+  // V1.4.5：禁止儲存未來出生日期
+  // 既有未來生日也必須修正
+  // ========================================
+
+  if (!isBirthdayNotFuture(birthday)) {
+    alert('出生日期不可晚於今天，請重新選擇生日。');
     return;
   }
 
