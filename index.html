@@ -50,6 +50,8 @@
 .stat-subtabs .btn{min-width:0;font-size:.78rem}
 .stat-income-row .stat-label{width:90px;overflow-wrap:anywhere}
 @media(max-width:390px){.stat-income-row{gap:.35rem}.stat-income-row .stat-label{width:74px;font-size:.73rem}.stat-income-row .stat-value{grid-template-columns:23px 43px;font-size:.7rem}}
+/* V1.7.0：分析對象與直向統計 */
+.analysis-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}.analysis-options .btn{display:flex;justify-content:space-between;align-items:center;gap:.3rem;font-size:.85rem;padding:.65rem .55rem;min-width:0}.analysis-options .btn span:last-child{font-variant-numeric:tabular-nums;font-weight:700}
 </style>
 </head>
 <body>
@@ -71,8 +73,8 @@
   </section>
   <section id="stats-view" style="display:none">
     <div class="stat-metrics" id="stat-metrics"></div>
-    <div class="stat-subtabs"><button id="subtab-source" class="btn btn-primary" onclick="switchStatsSubtab('source')">來源分析</button><button id="subtab-composition" class="btn btn-outline-primary" onclick="switchStatsSubtab('composition')">客戶組成</button><button id="subtab-age" class="btn btn-outline-primary" onclick="switchStatsSubtab('age')">年齡分布</button><button id="subtab-income" class="btn btn-outline-primary" onclick="switchStatsSubtab('income')">年收入分布</button></div>
-    <div id="stats-source" class="stat-panel"></div><div id="stats-composition" class="stat-panel" style="display:none"></div><div id="stats-age" class="stat-panel" style="display:none"></div><div id="stats-income" class="stat-panel" style="display:none"></div>
+    <div class="stat-card"><h6 class="fw-bold mb-3">分析對象</h6><div id="analysis-options" class="analysis-options"></div><p id="analysis-summary" class="stats-notice mt-3 mb-0" aria-live="polite"></p></div>
+    <div id="stats-composition"></div><div id="stats-source"></div><div id="stats-age"></div><div id="stats-income"></div>
   </section>
 </div>
 <div class="modal fade" id="client-modal" tabindex="-1"><div class="modal-dialog modal-dialog-scrollable"><div class="modal-content rounded-4 border-0 shadow"><div class="modal-header bg-light"><h5 class="modal-title fw-bold" id="modal-title">新增名單</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div><div class="modal-body p-4">
@@ -92,8 +94,9 @@ const API_URL = 'https://script.google.com/macros/s/AKfycbxik28XYTitdvmd1XFjJxWu
 let allClients=[],allInterviews=[],editingId=null,clientModal=null,interviewModal=null,noteModal=null;
 let clientSaving=false,pendingClientId=null,pendingAddPayload=null,originalEditingBirthday='';
 // V1.5.0：統計分析只使用已載入的既有資料，不修改 API 格式。
-let activeMainTab='list',activeStatsSubtab='source',statsFilter=null;
-const statsScroll={source:0,composition:0,age:0,income:0};let listScroll=0,statsDirty=true;
+let activeMainTab='list',statsFilter=null;
+let statsScroll=0,listScroll=0,statsDirty=true;
+let analysisSelection=['all'];
 const customerTags=['人壽','車險','旅平卡','產險'];
 const $=id=>document.getElementById(id);
 function escapeReminderHtml(value){return String(value==null?'':value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
@@ -107,18 +110,31 @@ function getAnnualIncome(c){const v=c&&c.annualIncome;if(v===''||v===null||v===u
 const incomeBands=[{label:'未滿40萬',min:0,max:40},{label:'40～59萬',min:40,max:60},{label:'60～79萬',min:60,max:80},{label:'80～99萬',min:80,max:100},{label:'100～149萬',min:100,max:150},{label:'150～199萬',min:150,max:200},{label:'200～299萬',min:200,max:300},{label:'300萬以上',min:300,max:Infinity}];
 function getIncomeBand(c){const n=getAnnualIncome(c);if(n===null)return null;const b=incomeBands.find(b=>n>=b.min&&n<b.max);return b?b.label:null;}
 function percent(n,total){return total?((n/total)*100).toFixed(1)+'%':'0.0%';}
-function applyStatsFilter(kind,value,label){
-  if(kind==='all'){clearStatsFilter();return;}
-  statsFilter={kind,value,label};$('search-input').value='';$('month-select').value='';
+function matchesAnalysis(c,selection){
+  if(selection.includes('all'))return true;
+  if(selection.includes('nonexisting'))return !isExistingCustomer(c);
+  return Array.isArray(c.tags)&&selection.some(t=>c.tags.includes(t));
+}
+function analysisLabel(key){return key==='all'?'全部名單':key==='nonexisting'?'非既有客戶':key;}
+function toggleAnalysis(key){
+  if(key==='all'||key==='nonexisting')analysisSelection=[key];
+  else{const next=analysisSelection.filter(t=>customerTags.includes(t));analysisSelection=next.includes(key)?next.filter(t=>t!==key):[...next,key];if(!analysisSelection.length)analysisSelection=['all'];}
+  renderStatistics();
+}
+function applyStatsFilter(kind,value,label,global=false){
+  const selection=global?['all']:[...analysisSelection];
+  statsFilter=kind==='all'?null:{kind,value,label:(selection.includes('all')?'':selection.map(analysisLabel).join('、')+'／')+label,selection};
+  $('search-input').value='';$('month-select').value='';
   switchMainTab('list',true);filterClients();window.scrollTo({top:0,behavior:'instant'});
 }
 function clearStatsFilter(){statsFilter=null;$('search-input').value='';$('month-select').value='';filterClients();}
 function onManualFilterChange(){statsFilter=null;filterClients();}
-function matchesStatsFilter(c){if(!statsFilter)return true;const {kind,value}=statsFilter;
+function matchesStatsFilter(c){if(!statsFilter)return true;const {kind,value,selection}=statsFilter;
+  if(selection&&!matchesAnalysis(c,selection))return false;
   if(kind==='existing')return isExistingCustomer(c);
   if(kind==='nonexisting')return !isExistingCustomer(c);
-  if(kind==='source')return getSourceType(c)===value;
-  if(kind==='gender')return c.gender===value;
+  if(kind==='source')return value===''?!['緣故','轉介紹','陌生'].includes(getSourceType(c)):getSourceType(c)===value;
+  if(kind==='gender')return value===''?!['男','女'].includes(c.gender):c.gender===value;
   if(kind==='tag')return Array.isArray(c.tags)&&c.tags.includes(value);
   if(kind==='age')return getAgeBand(getAge(c))===value;
   if(kind==='income')return getIncomeBand(c)===value;
@@ -127,25 +143,15 @@ function matchesStatsFilter(c){if(!statsFilter)return true;const {kind,value}=st
 function switchMainTab(tab,fromStatsClick=false){
   if(activeMainTab===tab&&!fromStatsClick)return;
   if(activeMainTab==='list')listScroll=window.scrollY;
-  else statsScroll[activeStatsSubtab]=window.scrollY;
+  else statsScroll=window.scrollY;
   activeMainTab=tab;
   $('list-view').style.display=tab==='list'?'':'none';$('stats-view').style.display=tab==='stats'?'':'none';
   $('main-tab-list').className='btn fw-bold '+(tab==='list'?'btn-primary':'btn-outline-primary');
   $('main-tab-stats').className='btn fw-bold '+(tab==='stats'?'btn-primary':'btn-outline-primary');
   if(tab==='stats'&&statsDirty)renderStatistics();
-  requestAnimationFrame(()=>window.scrollTo({top:tab==='list'?(fromStatsClick?0:listScroll):statsScroll[activeStatsSubtab],behavior:'instant'}));
+  requestAnimationFrame(()=>window.scrollTo({top:tab==='list'?(fromStatsClick?0:listScroll):statsScroll,behavior:'instant'}));
 }
-function switchStatsSubtab(tab){
-  if(activeStatsSubtab===tab)return;
-  statsScroll[activeStatsSubtab]=window.scrollY;
-  activeStatsSubtab=tab;
-  for(const name of ['source','composition','age','income']){
-    $('stats-'+name).style.display=name===tab?'':'none';
-    $('subtab-'+name).className='btn '+(name===tab?'btn-primary':'btn-outline-primary');
-  }
-  requestAnimationFrame(()=>window.scrollTo({top:statsScroll[tab],behavior:'instant'}));
-}
-function statMetric(label,count,kind,value){return `<button class="stat-metric" onclick="applyStatsFilter(${safeJsArg(kind)},${safeJsArg(value)},${safeJsArg(label)})"><div class="number">${count}</div><div class="label">${escapeReminderHtml(label)}</div></button>`;}
+function statMetric(label,count,kind,value){return `<button class="stat-metric" onclick="applyStatsFilter(${safeJsArg(kind)},${safeJsArg(value)},${safeJsArg(label)},true)"><div class="number">${count}</div><div class="label">${escapeReminderHtml(label)}</div></button>`;}
 function statRows(items,total,kind){return items.map((item,i)=>`<div class="stat-row ${kind==='income'?'stat-income-row':''} ${item.count?'stat-clickable':''}" ${item.count?`role="button" tabindex="0" onclick="applyStatsFilter(${safeJsArg(kind)},${safeJsArg(item.value)},${safeJsArg(item.label)})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}"`:''}><span class="stat-label">${escapeReminderHtml(item.label)}</span><div class="stat-track"><div class="stat-fill" style="width:${total?item.count/total*100:0}%;background:${item.color||'#0d6efd'}"></div></div><span class="stat-value"><span>${item.count}</span><span>${percent(item.count,total)}</span></span></div>`).join('');}
 function statPie(title,items,total,kind){
   const colors=kind==='gender'?['#0d6efd','#f472b6','#6c757d']:['#0d6efd','#20c997','#fd7e14','#6f42c1'];let cursor=0;
@@ -154,23 +160,24 @@ function statPie(title,items,total,kind){
   return `<div class="stat-card"><h6 class="fw-bold mb-3">${escapeReminderHtml(title)}</h6><div class="d-flex flex-wrap align-items-center gap-3"><div class="stat-donut" role="img" aria-label="${escapeReminderHtml(title)}圓餅圖" style="background:${gradient}"></div><div class="stat-legend"><div class="stat-legend-heading"><span>項目</span><span>人數</span><span>比例</span></div>${items.map((item,i)=>`<button class="stat-legend-item" type="button" onclick="applyStatsFilter(${safeJsArg(kind)},${safeJsArg(item.value)},${safeJsArg(item.label)})"><span class="stat-dot" style="background:${colors[i%colors.length]}"></span><span class="stat-legend-name">${escapeReminderHtml(item.label)}</span><span class="stat-legend-count">${item.count}</span><span class="stat-legend-percent">${percent(item.count,total)}</span></button>`).join('')}</div></div></div>`;
 }
 function renderStatistics(){
-  const total=allClients.length,existing=allClients.filter(isExistingCustomer).length,referrals=allClients.filter(c=>getSourceType(c)==='轉介紹').length;
-  $('stat-metrics').innerHTML=statMetric('總名單數',total,'all','')+statMetric('既有客戶數',existing,'existing','')+statMetric('非既有客戶數',total-existing,'nonexisting','')+statMetric('轉介紹名單數',referrals,'source','轉介紹');
-  const sources=['緣故','轉介紹','陌生'].map(label=>({label,value:label,count:allClients.filter(c=>getSourceType(c)===label).length}));
+  const globalTotal=allClients.length,existing=allClients.filter(isExistingCustomer).length,referrals=allClients.filter(c=>getSourceType(c)==='轉介紹').length;
+  $('stat-metrics').innerHTML=statMetric('總名單數',globalTotal,'all','')+statMetric('既有客戶數',existing,'existing','')+statMetric('非既有客戶數',globalTotal-existing,'nonexisting','')+statMetric('轉介紹名單數',referrals,'source','轉介紹');
+  const clients=allClients.filter(c=>matchesAnalysis(c,analysisSelection)),total=clients.length;
+  $('analysis-options').innerHTML=['all','nonexisting',...customerTags].map(key=>`<button type="button" class="btn ${analysisSelection.includes(key)?'btn-primary':'btn-outline-primary'}" aria-pressed="${analysisSelection.includes(key)}" onclick="toggleAnalysis(${safeJsArg(key)})"><span>${analysisLabel(key)}</span><span>${allClients.filter(c=>matchesAnalysis(c,[key])).length}</span></button>`).join('');
+  $('analysis-summary').textContent='目前分析：'+analysisSelection.map(analysisLabel).join('、')+'（'+total+' 位）';
+  const sources=['緣故','轉介紹','陌生'].map(label=>({label,value:label,count:clients.filter(c=>getSourceType(c)===label).length}));
   const otherSource=total-sources.reduce((n,s)=>n+s.count,0);
-  $('stats-source').innerHTML=statPie('名單來源分布',sources.concat(otherSource?[{label:'未分類',value:'',count:otherSource}]:[]),total,'source')+
-    `<div class="stat-card"><h6 class="fw-bold">轉介紹中心排行榜</h6><p class="stats-notice mb-0">目前資料僅記錄介紹人姓名，尚未建立介紹人唯一 ID。為避免同名介紹人被誤合併，方案 A 暫不顯示排行榜；已登錄的轉介紹名單仍完整計入來源統計。</p></div>`;
-  const genders=['男','女'].map(label=>({label,value:label,count:allClients.filter(c=>c.gender===label).length}));
+  $('stats-source').innerHTML=statPie('來源分布',sources.concat(otherSource?[{label:'未分類',value:'',count:otherSource}]:[]),total,'source');
+  const genders=['男','女'].map(label=>({label,value:label,count:clients.filter(c=>c.gender===label).length}));
   const unknown=total-genders.reduce((n,s)=>n+s.count,0);
-  const tags=customerTags.map((label,i)=>({label,value:label,count:allClients.filter(c=>Array.isArray(c.tags)&&c.tags.includes(label)).length,color:['#0d6efd','#20c997','#fd7e14','#6f42c1'][i]}));
-  $('stats-composition').innerHTML=statPie('性別分布',genders.concat(unknown?[{label:'未填寫',value:'',count:unknown}]:[]),total,'gender')+`<div class="stat-card"><h6 class="fw-bold mb-3">既有客戶類別</h6>${statRows(tags,total,'tag')}</div>`;
-  const ages=allClients.map(getAge).filter(n=>n!==null),bands=[];
+  $('stats-composition').innerHTML=statPie('性別分布',genders.concat(unknown?[{label:'未填寫',value:'',count:unknown}]:[]),total,'gender');
+  const ages=clients.map(getAge).filter(n=>n!==null),bands=[];
   for(let i=0;i<=80;i+=10){const label=i+'–'+(i+9);bands.push({label,value:label,count:ages.filter(n=>n>=i&&n<i+10).length});}
   bands.push({label:'90+',value:'90+',count:ages.filter(n=>n>=90).length});
   const avg=ages.length?(ages.reduce((a,b)=>a+b,0)/ages.length).toFixed(1):'—';
   const largest=bands.reduce((best,item)=>item.count>best.count?item:best,bands[0]);
   $('stats-age').innerHTML=`<div class="stat-card"><h6 class="fw-bold mb-3">年齡概況（實際足歲）</h6><div class="d-flex justify-content-around text-center"><div><div class="fs-4 fw-bold text-primary">${avg}</div><small class="text-muted">平均年齡</small></div><div><div class="fs-4 fw-bold text-primary">${ages.length&&largest.count?escapeReminderHtml(largest.label):'—'}</div><small class="text-muted">最多人年齡層</small></div></div></div><div class="stat-card"><h6 class="fw-bold mb-3">年齡分布</h6>${statRows(bands,total,'age')}</div>`;
-  const incomeValues=allClients.map(getAnnualIncome).filter(n=>n!==null),incomeCount=incomeValues.length;
+  const incomeValues=clients.map(getAnnualIncome).filter(n=>n!==null),incomeCount=incomeValues.length;
   const incomeItems=incomeBands.map(b=>({label:b.label,value:b.label,count:incomeValues.filter(n=>n>=b.min&&n<b.max).length}));
   $('stats-income').innerHTML=`<div class="stat-card"><h6 class="fw-bold mb-2">年收入分布（單位：萬元）</h6><p class="stats-notice mb-3">已填寫：${incomeCount} 位｜未填寫：${total-incomeCount} 位</p>${incomeCount?statRows(incomeItems,incomeCount,'income'):'<div class="stats-empty">尚無已填寫的年收入資料</div>'}</div>`;
   statsDirty=false;
