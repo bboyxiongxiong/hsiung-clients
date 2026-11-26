@@ -52,6 +52,10 @@
 @media(max-width:390px){.stat-income-row{gap:.35rem}.stat-income-row .stat-label{width:74px;font-size:.73rem}.stat-income-row .stat-value{grid-template-columns:23px 43px;font-size:.7rem}}
 /* V1.7.0：分析對象與直向統計 */
 .analysis-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}.analysis-options .btn{display:flex;justify-content:space-between;align-items:center;gap:.3rem;font-size:.85rem;padding:.65rem .55rem;min-width:0}.analysis-options .btn span:last-child{font-variant-numeric:tabular-nums;font-weight:700}
+/* V1.7.1：分析對象按鈕顏色僅依實際選取狀態，避免觸控 hover 殘留 */
+.analysis-options .btn[aria-pressed="false"]{color:#0d6efd;background-color:#fff;border-color:#0d6efd}
+.analysis-options .btn[aria-pressed="true"]{color:#fff;background-color:#0d6efd;border-color:#0d6efd}
+.analysis-options .btn:focus-visible{outline:3px solid #86b7fe;outline-offset:2px}
 </style>
 </head>
 <body>
